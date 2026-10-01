@@ -3,88 +3,68 @@ from __future__ import annotations
 from typing import Any
 
 import streamlit as st
-from neo4j import GraphDatabase, RoutingControl
+from neo4j import GraphDatabase
 
 
 # =========================
-# NEO4J CONFIG
+# CONNECT NEO4J
 # =========================
 
-def _config() -> tuple[str, str, str, str]:
-    cfg = st.secrets["neo4j"]
-
-    return (
-        cfg["uri"],
-        cfg["username"],
-        cfg["password"],
-        cfg.get("database", "neo4j"),
-    )
-
-
-# =========================
-# NEO4J DRIVER
-# =========================
-
-@st.cache_resource(show_spinner=False)
+@st.cache_resource
 def get_driver():
 
-    uri, username, password, _ = _config()
+    uri = st.secrets["neo4j"]["uri"]
+    username = st.secrets["neo4j"]["username"]
+    password = st.secrets["neo4j"]["password"]
 
-    driver = GraphDatabase.driver(
+    return GraphDatabase.driver(
         uri,
         auth=(username, password)
     )
 
-    driver.verify_connectivity()
 
-    return driver
-
-
-# =========================
-# RUN QUERY
-# =========================
-
-def query(
+def run_query(
     cypher: str,
-    parameters: dict[str, Any] | None = None,
-    *,
-    write: bool = False
-) -> list[dict[str, Any]]:
+    parameters: dict[str, Any] | None = None
+):
 
-    _, _, _, database = _config()
-
-    records, _, _ = get_driver().execute_query(
-        cypher,
-        parameters_=parameters or {},
-        database_=database,
-        routing_=(
-            RoutingControl.WRITE
-            if write
-            else RoutingControl.READ
-        ),
+    database = st.secrets["neo4j"].get(
+        "database",
+        "neo4j"
     )
 
-    return [
-        record.data()
-        for record in records
-    ]
+    driver = get_driver()
+
+    with driver.session(
+        database=database
+    ) as session:
+
+        result = session.run(
+            cypher,
+            parameters or {}
+        )
+
+        return [
+            record.data()
+            for record in result
+        ]
 
 
 # =========================
 # TEST CONNECTION
 # =========================
 
-def ping() -> bool:
+def ping():
 
     try:
 
-        rows = query(
+        result = run_query(
             "RETURN 1 AS ok"
         )
 
-        return bool(
-            rows
-            and rows[0]["ok"] == 1
+        return (
+            len(result) > 0
+            and result[0]["ok"] == 1
         )
 
     except Exception:
@@ -93,12 +73,12 @@ def ping() -> bool:
 
 
 # =========================
-# GET USERS
+# USERS
 # =========================
 
-def get_users() -> list[dict[str, Any]]:
+def get_users():
 
-    return query(
+    return run_query(
         """
         MATCH (u:User)
 
@@ -112,12 +92,12 @@ def get_users() -> list[dict[str, Any]]:
 
 
 # =========================
-# GET FOODS
+# FOODS
 # =========================
 
-def get_foods() -> list[dict[str, Any]]:
+def get_foods():
 
-    return query(
+    return run_query(
         """
         MATCH (f:Food)
 
@@ -132,12 +112,12 @@ def get_foods() -> list[dict[str, Any]]:
 
 
 # =========================
-# DASHBOARD METRICS
+# DASHBOARD
 # =========================
 
-def get_dashboard_metrics() -> dict[str, int]:
+def get_dashboard_metrics():
 
-    rows = query(
+    result = run_query(
         """
         OPTIONAL MATCH (u:User)
         WITH count(u) AS users
@@ -154,26 +134,24 @@ def get_dashboard_metrics() -> dict[str, int]:
         """
     )
 
-    if not rows:
+    if not result:
 
         return {
             "users": 0,
             "foods": 0,
-            "likes": 0,
+            "likes": 0
         }
 
-    return rows[0]
+    return result[0]
 
 
 # =========================
 # USER LIKES
 # =========================
 
-def get_user_likes(
-    user_id: str
-) -> list[dict[str, Any]]:
+def get_user_likes(user_id):
 
-    return query(
+    return run_query(
         """
         MATCH
             (u:User {user_id: $user_id})
@@ -189,29 +167,26 @@ def get_user_likes(
         """,
         {
             "user_id": user_id
-        },
+        }
     )
 
 
 # =========================
-# FOOD RECOMMENDATION
+# RECOMMENDATION
 # =========================
 
 def recommend_foods(
-    user_id: str,
-    limit: int = 6
-) -> list[dict[str, Any]]:
+    user_id,
+    top_n=6
+):
 
-    return query(
+    return run_query(
         """
         MATCH
             (me:User {user_id: $user_id})
-            -[:LIKES]->
-            (shared:Food)
-            <-[:LIKES]-
-            (similar:User)
-            -[:LIKES]->
-            (food:Food)
+            -[:LIKES]->(shared:Food)
+            <-[:LIKES]-(similar:User)
+            -[:LIKES]->(food:Food)
 
         WHERE
             similar <> me
@@ -234,12 +209,12 @@ def recommend_foods(
             score DESC,
             recommendation
 
-        LIMIT $limit
+        LIMIT $top_n
         """,
         {
             "user_id": user_id,
-            "limit": int(limit),
-        },
+            "top_n": int(top_n)
+        }
     )
 
 
@@ -248,17 +223,17 @@ def recommend_foods(
 # =========================
 
 def search_foods(
-    keyword: str = ""
-) -> list[dict[str, Any]]:
+    keyword=""
+):
 
-    return query(
+    return run_query(
         """
         MATCH (f:Food)
 
         WHERE
             $keyword = ""
             OR toLower(f.name)
-               CONTAINS toLower($keyword)
+            CONTAINS toLower($keyword)
 
         RETURN
             f.food_id AS food_id,
@@ -268,20 +243,18 @@ def search_foods(
         ORDER BY f.name
         """,
         {
-            "keyword": keyword.strip()
-        },
+            "keyword": keyword
+        }
     )
 
 
 # =========================
-# GRAPH EXPLORER
+# GRAPH
 # =========================
 
-def get_graph(
-    user_id: str
-) -> list[dict[str, Any]]:
+def get_graph(user_id):
 
-    return query(
+    return run_query(
         """
         MATCH
             (u:User {user_id: $user_id})
@@ -301,5 +274,5 @@ def get_graph(
         """,
         {
             "user_id": user_id
-        },
+        }
     )

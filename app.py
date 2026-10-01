@@ -4,7 +4,16 @@ import os
 
 import pandas as pd
 import streamlit as st
-from neo4j import GraphDatabase
+
+from neo4j_service import (
+    get_dashboard_metrics,
+    get_graph,
+    get_user_likes,
+    get_users,
+    ping,
+    recommend_foods,
+    search_foods,
+)
 
 
 # =========================
@@ -15,7 +24,6 @@ st.set_page_config(
     page_title="Food Recommendation System",
     page_icon="🍜",
     layout="wide",
-    initial_sidebar_state="expanded",
 )
 
 
@@ -26,55 +34,34 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-      .block-container {
-          padding-top: 1.3rem;
-          padding-bottom: 2rem;
-      }
 
-      .hero {
-          padding: 1.5rem 1.7rem;
-          border-radius: 22px;
-          background: linear-gradient(
-              120deg,
-              #111827 0%,
-              #1f2937 55%,
-              #0f766e 100%
-          );
-          color: white;
-          margin-bottom: 1rem;
-      }
+    .block-container {
+        padding-top: 1.3rem;
+    }
 
-      .hero h1 {
-          margin: 0;
-          font-size: 2.2rem;
-      }
+    .hero {
+        padding: 1.5rem;
+        border-radius: 20px;
+        background: linear-gradient(
+            120deg,
+            #111827,
+            #0f766e
+        );
+        color: white;
+        margin-bottom: 1rem;
+    }
 
-      .hero p {
-          opacity: .88;
-          margin: .4rem 0 0 0;
-      }
+    .hero h1 {
+        margin: 0;
+    }
 
-      .food-card {
-          padding: 1rem;
-          border: 1px solid rgba(128,128,128,.25);
-          border-radius: 16px;
-          margin-bottom: .8rem;
-      }
+    .food-card {
+        padding: 1rem;
+        border: 1px solid #444;
+        border-radius: 15px;
+        margin-bottom: 1rem;
+    }
 
-      .score-pill {
-          display: inline-block;
-          padding: .2rem .6rem;
-          border-radius: 999px;
-          background: #0f766e;
-          color: white;
-          font-size: .8rem;
-          font-weight: 700;
-      }
-
-      .muted {
-          opacity: .72;
-          font-size: .9rem;
-      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -82,250 +69,13 @@ st.markdown(
 
 
 # =========================
-# NEO4J CONNECTION
-# =========================
-
-@st.cache_resource
-def get_driver():
-    uri = st.secrets["neo4j"]["uri"]
-    username = st.secrets["neo4j"]["username"]
-    password = st.secrets["neo4j"]["password"]
-
-    return GraphDatabase.driver(
-        uri,
-        auth=(username, password)
-    )
-
-
-def run_query(query, parameters=None):
-    driver = get_driver()
-
-    with driver.session(
-        database=st.secrets["neo4j"].get("database", "neo4j")
-    ) as session:
-        result = session.run(
-            query,
-            parameters or {}
-        )
-        return [record.data() for record in result]
-
-
-def ping():
-    try:
-        run_query("RETURN 1 AS ok")
-        return True
-    except Exception:
-        return False
-
-
-# =========================
-# NEO4J FUNCTIONS
-# =========================
-
-def get_users():
-
-    query = """
-    MATCH (u:User)
-    RETURN
-        u.user_id AS user_id,
-        u.name AS name
-    ORDER BY u.user_id
-    """
-
-    return run_query(query)
-
-
-def get_foods():
-
-    query = """
-    MATCH (f:Food)
-    RETURN
-        f.food_id AS food_id,
-        f.name AS name,
-        f.image AS image
-    ORDER BY f.food_id
-    """
-
-    return run_query(query)
-
-
-def get_dashboard_metrics():
-
-    query = """
-    OPTIONAL MATCH (u:User)
-    WITH count(u) AS users
-
-    OPTIONAL MATCH (f:Food)
-    WITH users, count(f) AS foods
-
-    OPTIONAL MATCH ()-[r:LIKES]->()
-    RETURN
-        users,
-        foods,
-        count(r) AS likes
-    """
-
-    rows = run_query(query)
-
-    if not rows:
-        return {
-            "users": 0,
-            "foods": 0,
-            "likes": 0
-        }
-
-    return rows[0]
-
-
-def get_user_likes(user_id):
-
-    query = """
-    MATCH (u:User {user_id: $user_id})
-          -[:LIKES]->(f:Food)
-
-    RETURN
-        f.food_id AS food_id,
-        f.name AS name,
-        f.image AS image
-
-    ORDER BY f.name
-    """
-
-    return run_query(
-        query,
-        {"user_id": user_id}
-    )
-
-
-def recommend_foods(user_id, top_n=6):
-
-    query = """
-    MATCH
-        (me:User {user_id: $user_id})
-        -[:LIKES]->(shared:Food)
-        <-[:LIKES]-(similar:User)
-        -[:LIKES]->(food:Food)
-
-    WHERE similar <> me
-      AND NOT (me)-[:LIKES]->(food)
-
-    RETURN
-        food.food_id AS food_id,
-        food.name AS recommendation,
-        food.image AS image,
-        count(DISTINCT similar) AS score,
-        collect(DISTINCT similar.name) AS similar_users
-
-    ORDER BY score DESC, recommendation
-
-    LIMIT $top_n
-    """
-
-    return run_query(
-        query,
-        {
-            "user_id": user_id,
-            "top_n": top_n
-        }
-    )
-
-
-def search_foods(keyword=""):
-
-    query = """
-    MATCH (f:Food)
-
-    WHERE
-        $keyword = ""
-        OR toLower(f.name) CONTAINS toLower($keyword)
-
-    RETURN
-        f.food_id AS food_id,
-        f.name AS name,
-        f.image AS image
-
-    ORDER BY f.name
-    """
-
-    return run_query(
-        query,
-        {"keyword": keyword}
-    )
-
-
-def get_graph(user_id):
-
-    query = """
-    MATCH
-        (u:User {user_id: $user_id})
-        -[r:LIKES]->(f:Food)
-
-    RETURN
-        u.user_id AS source_id,
-        u.name AS source_name,
-        "User" AS source_label,
-
-        f.food_id AS target_id,
-        f.name AS target_name,
-        "Food" AS target_label,
-
-        type(r) AS relationship
-    """
-
-    return run_query(
-        query,
-        {"user_id": user_id}
-    )
-
-
-# =========================
-# IMAGE
-# =========================
-
-def show_food_image(image_name, width=220):
-
-    if not image_name:
-        return
-
-    image_path = os.path.join(
-        "images",
-        image_name
-    )
-
-    if os.path.exists(image_path):
-        st.image(
-            image_path,
-            width=width
-        )
-    else:
-        st.info(
-            f"ยังไม่มีรูป {image_name}"
-        )
-
-
-# =========================
-# CONNECTION CHECK
+# CONNECTION
 # =========================
 
 if not ping():
 
     st.error(
-        "❌ ยังเชื่อมต่อ Neo4j Aura ไม่สำเร็จ"
-    )
-
-    st.code(
-        """
-[neo4j]
-uri = "neo4j+s://YOUR_INSTANCE.databases.neo4j.io"
-username = "neo4j"
-password = "YOUR_PASSWORD"
-database = "neo4j"
-        """,
-        language="toml"
-    )
-
-    st.caption(
-        "ใส่ข้อมูล Neo4j Aura ใน Streamlit Secrets และห้ามใส่ Password ลง GitHub"
+        "ไม่สามารถเชื่อมต่อ Neo4j Aura ได้"
     )
 
     st.stop()
@@ -337,7 +87,9 @@ database = "neo4j"
 
 with st.sidebar:
 
-    st.markdown("## 🍜 Food Recommendation")
+    st.markdown(
+        "## 🍜 Food Recommendation"
+    )
 
     st.caption(
         "Neo4j Aura + Streamlit"
@@ -350,14 +102,8 @@ with st.sidebar:
             "Recommendations",
             "Food Search",
             "My Likes",
-            "Graph Explorer"
+            "Graph Explorer",
         ]
-    )
-
-    st.divider()
-
-    st.caption(
-        "Food Recommendation System"
     )
 
 
@@ -368,14 +114,18 @@ with st.sidebar:
 st.markdown(
     """
     <div class="hero">
-        <h1>🍜 Food Recommendation System</h1>
+
+        <h1>
+            🍜 Food Recommendation System
+        </h1>
+
         <p>
             ระบบแนะนำอาหารด้วย Graph Database
-            โดยใช้ความชอบของผู้ใช้ในการสร้างคำแนะนำ
         </p>
+
     </div>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
@@ -388,9 +138,11 @@ def user_selector(key):
     users = get_users()
 
     if not users:
+
         st.warning(
-            "ยังไม่มีข้อมูล User ใน Neo4j"
+            "ยังไม่มี User ใน Neo4j"
         )
+
         st.stop()
 
     labels = {
@@ -410,95 +162,107 @@ def user_selector(key):
 
 
 # =========================
-# DASHBOARD
+# SHOW IMAGE
 # =========================
+
+def show_food_image(
+    image_name,
+    width=220
+):
+
+    if not image_name:
+        return
+
+    path = os.path.join(
+        "images",
+        image_name
+    )
+
+    if os.path.exists(path):
+
+        st.image(
+            path,
+            width=width
+        )
+
+    else:
+
+        st.info(
+            f"ยังไม่มีรูป {image_name}"
+        )
+
+
+# ==================================================
+# DASHBOARD
+# ==================================================
 
 if page == "Dashboard":
 
-    st.subheader("📊 ภาพรวมระบบ")
+    st.subheader(
+        "📊 ภาพรวมระบบ"
+    )
 
-    metrics = get_dashboard_metrics()
+    data = get_dashboard_metrics()
 
     c1, c2, c3 = st.columns(3)
 
     c1.metric(
         "Users",
-        metrics["users"]
+        data["users"]
     )
 
     c2.metric(
         "Foods",
-        metrics["foods"]
+        data["foods"]
     )
 
     c3.metric(
         "LIKES",
-        metrics["likes"]
+        data["likes"]
     )
 
     st.divider()
-
-    st.subheader("👤 ข้อมูลผู้ใช้")
 
     user_id = user_selector(
         "dashboard_user"
     )
 
-    users = get_users()
-
-    selected_user = next(
-        (
-            u for u in users
-            if u["user_id"] == user_id
-        ),
-        None
+    likes = get_user_likes(
+        user_id
     )
 
-    if selected_user:
+    st.subheader(
+        "❤️ อาหารที่ผู้ใช้ชอบ"
+    )
 
-        st.markdown(
-            f"### {selected_user['name']}"
+    if likes:
+
+        cols = st.columns(
+            min(3, len(likes))
         )
 
-        st.write(
-            f"**User ID:** {selected_user['user_id']}"
+        for i, food in enumerate(likes):
+
+            with cols[i % len(cols)]:
+
+                show_food_image(
+                    food["image"]
+                )
+
+                st.markdown(
+                    f"### {food['name']}"
+                )
+
+    else:
+
+        st.info(
+            "ยังไม่มีอาหารที่ชอบ"
         )
 
-        likes = get_user_likes(user_id)
 
-        st.markdown(
-            "#### ❤️ อาหารที่ชอบ"
-        )
-
-        if likes:
-
-            cols = st.columns(
-                min(len(likes), 3)
-            )
-
-            for i, food in enumerate(likes):
-
-                with cols[i % len(cols)]:
-
-                    show_food_image(
-                        food["image"],
-                        width=180
-                    )
-
-                    st.write(
-                        f"**{food['name']}**"
-                    )
-
-        else:
-
-            st.info(
-                "ผู้ใช้นี้ยังไม่มีอาหารที่ชอบ"
-            )
-
-
-# =========================
-# RECOMMENDATIONS
-# =========================
+# ==================================================
+# RECOMMENDATION
+# ==================================================
 
 elif page == "Recommendations":
 
@@ -522,14 +286,10 @@ elif page == "Recommendations":
         top_n
     )
 
-    st.caption(
-        "Score = จำนวนผู้ใช้ที่มีความชอบร่วมกันและชอบอาหารที่แนะนำ"
-    )
-
     if not rows:
 
         st.info(
-            "ยังไม่มีคำแนะนำสำหรับผู้ใช้นี้"
+            "ยังไม่มีอาหารที่สามารถแนะนำได้"
         )
 
     else:
@@ -546,46 +306,41 @@ elif page == "Recommendations":
             with col1:
 
                 show_food_image(
-                    row["image"],
-                    width=200
+                    row["image"]
                 )
 
             with col2:
 
                 st.markdown(
-                    f"""
-                    <span class="score-pill">
-                    #{i} · Score {row['score']}
-                    </span>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-                st.markdown(
-                    f"### {row['recommendation']}"
+                    f"## #{i} {row['recommendation']}"
                 )
 
                 st.write(
                     f"Food ID: {row['food_id']}"
                 )
 
-                similar_users = ", ".join(
-                    row.get("similar_users") or []
+                st.write(
+                    f"⭐ Recommendation Score: "
+                    f"{row['score']}"
                 )
 
-                if similar_users:
+                users = ", ".join(
+                    row["similar_users"]
+                )
+
+                if users:
 
                     st.write(
                         "👥 ผู้ใช้ที่มีความชอบคล้ายกัน: "
-                        + similar_users
+                        + users
                     )
 
-                st.markdown("---")
+            st.divider()
 
 
-# =========================
+# ==================================================
 # FOOD SEARCH
-# =========================
+# ==================================================
 
 elif page == "Food Search":
 
@@ -594,8 +349,7 @@ elif page == "Food Search":
     )
 
     keyword = st.text_input(
-        "ชื่ออาหาร",
-        placeholder="เช่น Noodle, Fried Rice"
+        "ค้นหาชื่ออาหาร"
     )
 
     foods = search_foods(
@@ -606,33 +360,28 @@ elif page == "Food Search":
         f"พบ {len(foods)} รายการ"
     )
 
-    if foods:
+    cols = st.columns(3)
 
-        cols = st.columns(3)
+    for i, food in enumerate(foods):
 
-        for i, food in enumerate(foods):
+        with cols[i % 3]:
 
-            with cols[i % 3]:
+            show_food_image(
+                food["image"]
+            )
 
-                show_food_image(
-                    food["image"],
-                    width=220
-                )
+            st.markdown(
+                f"### {food['name']}"
+            )
 
-                st.markdown(
-                    f"### {food['name']}"
-                )
-
-                st.caption(
-                    food["food_id"]
-                )
-
-                st.divider()
+            st.caption(
+                food["food_id"]
+            )
 
 
-# =========================
+# ==================================================
 # MY LIKES
-# =========================
+# ==================================================
 
 elif page == "My Likes":
 
@@ -644,43 +393,36 @@ elif page == "My Likes":
         "likes_user"
     )
 
-    likes = get_user_likes(
+    foods = get_user_likes(
         user_id
     )
 
-    if not likes:
+    if not foods:
 
         st.info(
-            "ผู้ใช้นี้ยังไม่มีอาหารที่ชอบ"
+            "ยังไม่มีอาหารที่ชอบ"
         )
 
     else:
 
-        cols = st.columns(
-            min(len(likes), 3)
-        )
+        cols = st.columns(3)
 
-        for i, food in enumerate(likes):
+        for i, food in enumerate(foods):
 
-            with cols[i % len(cols)]:
+            with cols[i % 3]:
 
                 show_food_image(
-                    food["image"],
-                    width=220
+                    food["image"]
                 )
 
                 st.markdown(
                     f"### {food['name']}"
                 )
 
-                st.caption(
-                    food["food_id"]
-                )
 
-
-# =========================
+# ==================================================
 # GRAPH EXPLORER
-# =========================
+# ==================================================
 
 elif page == "Graph Explorer":
 
@@ -707,49 +449,24 @@ elif page == "Graph Explorer":
         dot = [
             "digraph G {",
             'rankdir="LR";',
-            'node [shape=box, style="rounded,filled"];'
+            'node [shape=box];'
         ]
-
-        seen_nodes = set()
 
         for row in rows:
 
-            source_id = row["source_id"]
-            target_id = row["target_id"]
-
-            if source_id not in seen_nodes:
-
-                safe_name = str(
-                    row["source_name"]
-                ).replace('"', "'")
-
-                dot.append(
-                    f'"{source_id}" '
-                    f'[label="{safe_name}\\nUser"];'
-                )
-
-                seen_nodes.add(
-                    source_id
-                )
-
-            if target_id not in seen_nodes:
-
-                safe_name = str(
-                    row["target_name"]
-                ).replace('"', "'")
-
-                dot.append(
-                    f'"{target_id}" '
-                    f'[label="{safe_name}\\nFood"];'
-                )
-
-                seen_nodes.add(
-                    target_id
-                )
+            dot.append(
+                f'"{row["source_id"]}" '
+                f'[label="{row["source_name"]}\\nUser"];'
+            )
 
             dot.append(
-                f'"{source_id}" -> '
-                f'"{target_id}" '
+                f'"{row["target_id"]}" '
+                f'[label="{row["target_name"]}\\nFood"];'
+            )
+
+            dot.append(
+                f'"{row["source_id"]}" -> '
+                f'"{row["target_id"]}" '
                 f'[label="LIKES"];'
             )
 
@@ -760,12 +477,8 @@ elif page == "Graph Explorer":
             use_container_width=True
         )
 
-        with st.expander(
-            "ดูข้อมูลความสัมพันธ์"
-        ):
-
-            st.dataframe(
-                pd.DataFrame(rows),
-                use_container_width=True,
-                hide_index=True
-            )
+        st.dataframe(
+            pd.DataFrame(rows),
+            use_container_width=True,
+            hide_index=True
+        )
