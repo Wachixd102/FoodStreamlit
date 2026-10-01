@@ -1,115 +1,130 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
 from neo4j_service import (
+    add_food,
+    add_like,
+    add_user,
+    delete_food,
+    delete_like,
+    delete_user,
     get_dashboard_metrics,
+    get_foods,
     get_graph,
     get_user_likes,
     get_users,
     ping,
     recommend_foods,
     search_foods,
+    update_food,
+    update_user,
 )
 
 
-# =========================
+# =====================================================
 # PAGE SETUP
-# =========================
+# =====================================================
 
 st.set_page_config(
     page_title="Food Recommendation System",
     page_icon="🍜",
-    layout="wide",
+    layout="wide"
 )
 
 
-# =========================
-# STYLE
-# =========================
+# =====================================================
+# CSS
+# =====================================================
 
 st.markdown(
     """
-    <style>
+<style>
 
-    .block-container {
-        padding-top: 1.3rem;
-    }
+.hero {
+    padding: 25px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #ff8a00, #ff4d4d);
+    color: white;
+    margin-bottom: 25px;
+}
 
-    .hero {
-        padding: 1.5rem;
-        border-radius: 20px;
-        background: linear-gradient(
-            120deg,
-            #111827,
-            #0f766e
-        );
-        color: white;
-        margin-bottom: 1rem;
-    }
+.hero h1 {
+    margin: 0;
+    font-size: 36px;
+}
 
-    .hero h1 {
-        margin: 0;
-    }
+.hero p {
+    margin-top: 8px;
+    font-size: 17px;
+}
 
-    .food-card {
-        padding: 1rem;
-        border: 1px solid #444;
-        border-radius: 15px;
-        margin-bottom: 1rem;
-    }
+.card {
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    margin-bottom: 15px;
+}
 
-    </style>
-    """,
-    unsafe_allow_html=True,
+</style>
+""",
+    unsafe_allow_html=True
 )
 
 
-# =========================
-# CONNECTION
-# =========================
+# =====================================================
+# FUNCTIONS
+# =====================================================
 
-if not ping():
+def show_food_image(image_name, width=220):
+    """
+    แสดงรูปอาหารจากโฟลเดอร์ images
+    """
 
-    st.error(
-        "ไม่สามารถเชื่อมต่อ Neo4j Aura ได้"
-    )
+    if not image_name:
+        st.info("ยังไม่มีรูปอาหาร")
+        return
 
-    st.stop()
+    image_path = Path(__file__).parent / "images" / image_name
 
-
-# =========================
-# SIDEBAR
-# =========================
-
-with st.sidebar:
-
-    st.markdown(
-        "## 🍜 Food Recommendation"
-    )
-
-    st.caption(
-        "Neo4j Aura + Streamlit"
-    )
-
-    page = st.radio(
-        "เมนู",
-        [
-            "Dashboard",
-            "Recommendations",
-            "Food Search",
-            "My Likes",
-            "Graph Explorer",
-        ]
-    )
+    if image_path.exists():
+        st.image(
+            str(image_path),
+            width=width
+        )
+    else:
+        st.warning(
+            f"หารูปไม่เจอ: {image_name}"
+        )
 
 
-# =========================
+def get_user_options():
+    users = get_users()
+
+    return {
+        f"{user['user_id']} - {user['name']}":
+        user["user_id"]
+        for user in users
+    }
+
+
+def get_food_options():
+    foods = get_foods()
+
+    return {
+        f"{food['food_id']} - {food['name']}":
+        food["food_id"]
+        for food in foods
+    }
+
+
+# =====================================================
 # HEADER
-# =========================
+# =====================================================
 
 st.markdown(
     """
@@ -118,360 +133,937 @@ st.markdown(
 <p>ระบบแนะนำอาหารด้วย Graph Database</p>
 </div>
 """,
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
 
 
-# =========================
-# USER SELECTOR
-# =========================
+# =====================================================
+# SIDEBAR
+# =====================================================
 
-def user_selector(key):
+st.sidebar.title("📌 เมนู")
 
-    users = get_users()
+page = st.sidebar.radio(
+    "เลือกหน้า",
+    [
+        "🏠 Dashboard",
+        "🍱 Recommendations",
+        "🔎 Food Search",
+        "❤️ My Likes",
+        "🕸️ Graph Explorer",
+        "⚙️ จัดการข้อมูล"
+    ]
+)
 
-    if not users:
 
-        st.warning(
-            "ยังไม่มี User ใน Neo4j"
-        )
+# =====================================================
+# CHECK DATABASE
+# =====================================================
 
-        st.stop()
+if not ping():
 
-    labels = {
-        f"{u['user_id']} — {u['name']}":
-        u["user_id"]
-
-        for u in users
-    }
-
-    selected = st.selectbox(
-        "เลือกผู้ใช้",
-        list(labels.keys()),
-        key=key
+    st.error(
+        "❌ ไม่สามารถเชื่อมต่อ Neo4j ได้"
     )
 
-    return labels[selected]
+    st.stop()
 
 
-# =========================
-# SHOW IMAGE
-# =========================
-
-def show_food_image(
-    image_name,
-    width=220
-):
-
-    if not image_name:
-        return
-
-    path = os.path.join(
-        "images",
-        image_name
-    )
-
-    if os.path.exists(path):
-
-        st.image(
-            path,
-            width=width
-        )
-
-    else:
-
-        st.info(
-            f"ยังไม่มีรูป {image_name}"
-        )
-
-
-# ==================================================
+# =====================================================
 # DASHBOARD
-# ==================================================
+# =====================================================
 
-if page == "Dashboard":
+if page == "🏠 Dashboard":
 
-    st.subheader(
-        "📊 ภาพรวมระบบ"
-    )
+    st.header("🏠 Dashboard")
 
-    data = get_dashboard_metrics()
+    metrics = get_dashboard_metrics()
 
-    c1, c2, c3 = st.columns(3)
+    col1, col2, col3 = st.columns(3)
 
-    c1.metric(
-        "Users",
-        data["users"]
-    )
+    with col1:
+        st.metric(
+            "👤 Users",
+            metrics["users"]
+        )
 
-    c2.metric(
-        "Foods",
-        data["foods"]
-    )
+    with col2:
+        st.metric(
+            "🍜 Foods",
+            metrics["foods"]
+        )
 
-    c3.metric(
-        "LIKES",
-        data["likes"]
-    )
+    with col3:
+        st.metric(
+            "❤️ LIKES",
+            metrics["likes"]
+        )
 
     st.divider()
 
-    user_id = user_selector(
-        "dashboard_user"
-    )
+    st.subheader("👥 ผู้ใช้งาน")
 
-    likes = get_user_likes(
-        user_id
-    )
+    users = get_users()
 
-    st.subheader(
-        "❤️ อาหารที่ผู้ใช้ชอบ"
-    )
+    if users:
 
-    if likes:
+        df = pd.DataFrame(users)
 
-        cols = st.columns(
-            min(3, len(likes))
+        st.dataframe(
+            df,
+            use_container_width=True,
+            hide_index=True
         )
-
-        for i, food in enumerate(likes):
-
-            with cols[i % len(cols)]:
-
-                show_food_image(
-                    food["image"]
-                )
-
-                st.markdown(
-                    f"### {food['name']}"
-                )
 
     else:
 
-        st.info(
-            "ยังไม่มีอาหารที่ชอบ"
-        )
+        st.info("ยังไม่มีข้อมูล User")
 
 
-# ==================================================
-# RECOMMENDATION
-# ==================================================
+# =====================================================
+# RECOMMENDATIONS
+# =====================================================
 
-elif page == "Recommendations":
+elif page == "🍱 Recommendations":
 
-    st.subheader(
-        "✨ อาหารที่แนะนำ"
+    st.header("🍱 Food Recommendations")
+
+    user_options = get_user_options()
+
+    if not user_options:
+
+        st.warning("ยังไม่มี User")
+
+        st.stop()
+
+    selected_user = st.selectbox(
+        "เลือกผู้ใช้",
+        list(user_options.keys())
     )
 
-    user_id = user_selector(
-        "recommend_user"
-    )
+    user_id = user_options[selected_user]
 
-    top_n = st.slider(
-        "จำนวนคำแนะนำ",
-        1,
-        7,
-        5
-    )
+    st.divider()
 
-    rows = recommend_foods(
+    recommendations = recommend_foods(
         user_id,
-        top_n
+        top_n=6
     )
 
-    if not rows:
+    if not recommendations:
 
         st.info(
-            "ยังไม่มีอาหารที่สามารถแนะนำได้"
+            "ยังไม่พบอาหารที่สามารถแนะนำได้"
         )
 
     else:
 
-        for i, row in enumerate(
-            rows,
-            start=1
-        ):
+        st.subheader(
+            f"อาหารที่แนะนำสำหรับ {selected_user}"
+        )
 
-            col1, col2 = st.columns(
-                [1, 3]
-            )
+        cols = st.columns(3)
 
-            with col1:
+        for index, food in enumerate(recommendations):
 
-                show_food_image(
-                    row["image"]
-                )
-
-            with col2:
+            with cols[index % 3]:
 
                 st.markdown(
-                    f"## #{i} {row['recommendation']}"
+                    '<div class="card">',
+                    unsafe_allow_html=True
+                )
+
+                show_food_image(
+                    food.get("image"),
+                    width=220
+                )
+
+                st.subheader(
+                    food["recommendation"]
                 )
 
                 st.write(
-                    f"Food ID: {row['food_id']}"
+                    f"⭐ คะแนน: {food['score']}"
                 )
 
-                st.write(
-                    f"⭐ Recommendation Score: "
-                    f"{row['score']}"
+                similar_users = food.get(
+                    "similar_users",
+                    []
                 )
 
-                users = ", ".join(
-                    row["similar_users"]
-                )
+                if similar_users:
 
-                if users:
-
-                    st.write(
-                        "👥 ผู้ใช้ที่มีความชอบคล้ายกัน: "
-                        + users
+                    st.caption(
+                        "ผู้ใช้ที่มีความชอบคล้ายกัน: "
+                        + ", ".join(similar_users)
                     )
 
-            st.divider()
+                st.markdown(
+                    "</div>",
+                    unsafe_allow_html=True
+                )
 
 
-# ==================================================
+# =====================================================
 # FOOD SEARCH
-# ==================================================
+# =====================================================
 
-elif page == "Food Search":
+elif page == "🔎 Food Search":
 
-    st.subheader(
-        "🔎 ค้นหาอาหาร"
-    )
+    st.header("🔎 Food Search")
 
     keyword = st.text_input(
-        "ค้นหาชื่ออาหาร"
+        "ค้นหาอาหาร",
+        placeholder="เช่น Noodle, Pad Thai..."
     )
 
-    foods = search_foods(
-        keyword
-    )
-
-    st.write(
-        f"พบ {len(foods)} รายการ"
-    )
-
-    cols = st.columns(3)
-
-    for i, food in enumerate(foods):
-
-        with cols[i % 3]:
-
-            show_food_image(
-                food["image"]
-            )
-
-            st.markdown(
-                f"### {food['name']}"
-            )
-
-            st.caption(
-                food["food_id"]
-            )
-
-
-# ==================================================
-# MY LIKES
-# ==================================================
-
-elif page == "My Likes":
-
-    st.subheader(
-        "❤️ อาหารที่ผู้ใช้ชอบ"
-    )
-
-    user_id = user_selector(
-        "likes_user"
-    )
-
-    foods = get_user_likes(
-        user_id
-    )
+    foods = search_foods(keyword)
 
     if not foods:
 
-        st.info(
-            "ยังไม่มีอาหารที่ชอบ"
-        )
+        st.info("ไม่พบอาหาร")
 
     else:
 
         cols = st.columns(3)
 
-        for i, food in enumerate(foods):
+        for index, food in enumerate(foods):
 
-            with cols[i % 3]:
+            with cols[index % 3]:
+
+                st.markdown(
+                    '<div class="card">',
+                    unsafe_allow_html=True
+                )
 
                 show_food_image(
-                    food["image"]
+                    food.get("image"),
+                    width=220
+                )
+
+                st.subheader(
+                    food["name"]
+                )
+
+                st.caption(
+                    f"Food ID: {food['food_id']}"
                 )
 
                 st.markdown(
-                    f"### {food['name']}"
+                    "</div>",
+                    unsafe_allow_html=True
                 )
 
 
-# ==================================================
-# GRAPH EXPLORER
-# ==================================================
+# =====================================================
+# MY LIKES
+# =====================================================
 
-elif page == "Graph Explorer":
+elif page == "❤️ My Likes":
 
-    st.subheader(
-        "🕸️ Food Graph Explorer"
+    st.header("❤️ My Likes")
+
+    user_options = get_user_options()
+
+    if not user_options:
+
+        st.warning("ยังไม่มี User")
+
+        st.stop()
+
+    selected_user = st.selectbox(
+        "เลือกผู้ใช้",
+        list(user_options.keys())
     )
 
-    user_id = user_selector(
-        "graph_user"
-    )
+    user_id = user_options[selected_user]
 
-    rows = get_graph(
-        user_id
-    )
+    st.divider()
 
-    if not rows:
+    likes = get_user_likes(user_id)
+
+    if not likes:
 
         st.info(
-            "ยังไม่มีความสัมพันธ์ LIKES"
+            "ผู้ใช้นี้ยังไม่มีอาหารที่กด Like"
         )
 
     else:
 
-        dot = [
-            "digraph G {",
-            'rankdir="LR";',
-            'node [shape=box];'
-        ]
-
-        for row in rows:
-
-            dot.append(
-                f'"{row["source_id"]}" '
-                f'[label="{row["source_name"]}\\nUser"];'
-            )
-
-            dot.append(
-                f'"{row["target_id"]}" '
-                f'[label="{row["target_name"]}\\nFood"];'
-            )
-
-            dot.append(
-                f'"{row["source_id"]}" -> '
-                f'"{row["target_id"]}" '
-                f'[label="LIKES"];'
-            )
-
-        dot.append("}")
-
-        st.graphviz_chart(
-            "\n".join(dot),
-            use_container_width=True
+        st.subheader(
+            f"อาหารที่ {selected_user} ชอบ"
         )
 
+        cols = st.columns(3)
+
+        for index, food in enumerate(likes):
+
+            with cols[index % 3]:
+
+                st.markdown(
+                    '<div class="card">',
+                    unsafe_allow_html=True
+                )
+
+                show_food_image(
+                    food.get("image"),
+                    width=220
+                )
+
+                st.subheader(
+                    food["name"]
+                )
+
+                st.caption(
+                    f"Food ID: {food['food_id']}"
+                )
+
+                st.markdown(
+                    "</div>",
+                    unsafe_allow_html=True
+                )
+
+
+# =====================================================
+# GRAPH EXPLORER
+# =====================================================
+
+elif page == "🕸️ Graph Explorer":
+
+    st.header("🕸️ Graph Explorer")
+
+    user_options = get_user_options()
+
+    if not user_options:
+
+        st.warning("ยังไม่มี User")
+
+        st.stop()
+
+    selected_user = st.selectbox(
+        "เลือกผู้ใช้",
+        list(user_options.keys())
+    )
+
+    user_id = user_options[selected_user]
+
+    graph_data = get_graph(user_id)
+
+    if not graph_data:
+
+        st.info(
+            "User คนนี้ยังไม่มีความสัมพันธ์ LIKES"
+        )
+
+    else:
+
+        st.subheader("ความสัมพันธ์ User → Food")
+
+        df = pd.DataFrame(graph_data)
+
         st.dataframe(
-            pd.DataFrame(rows),
+            df,
             use_container_width=True,
             hide_index=True
         )
+
+
+# =====================================================
+# ADMIN / CRUD
+# =====================================================
+
+elif page == "⚙️ จัดการข้อมูล":
+
+    st.header("⚙️ จัดการข้อมูล")
+
+    st.info(
+        "หน้านี้ใช้สำหรับ เพิ่ม / แก้ไข / ลบข้อมูลในระบบ"
+    )
+
+    tab1, tab2, tab3, tab4 = st.tabs(
+        [
+            "➕ เพิ่มข้อมูล",
+            "✏️ แก้ไขข้อมูล",
+            "🗑️ ลบข้อมูล",
+            "❤️ จัดการ LIKES"
+        ]
+    )
+
+    # =================================================
+    # ADD
+    # =================================================
+
+    with tab1:
+
+        st.subheader("👤 เพิ่ม User")
+
+        with st.form("add_user_form"):
+
+            user_id = st.text_input(
+                "User ID",
+                placeholder="เช่น U006"
+            )
+
+            user_name = st.text_input(
+                "ชื่อ User",
+                placeholder="เช่น Somchai"
+            )
+
+            submit_user = st.form_submit_button(
+                "➕ เพิ่ม User"
+            )
+
+            if submit_user:
+
+                if not user_id or not user_name:
+
+                    st.error(
+                        "กรุณากรอกข้อมูลให้ครบ"
+                    )
+
+                else:
+
+                    try:
+
+                        result = add_user(
+                            user_id,
+                            user_name
+                        )
+
+                        if result:
+
+                            st.success(
+                                "เพิ่ม User สำเร็จ"
+                            )
+
+                            st.rerun()
+
+                        else:
+
+                            st.error(
+                                "ไม่สามารถเพิ่ม User ได้"
+                            )
+
+                    except Exception as e:
+
+                        st.error(
+                            f"เกิดข้อผิดพลาด: {e}"
+                        )
+
+        st.divider()
+
+        st.subheader("🍜 เพิ่ม Food")
+
+        with st.form("add_food_form"):
+
+            food_id = st.text_input(
+                "Food ID",
+                placeholder="เช่น F008"
+            )
+
+            food_name = st.text_input(
+                "ชื่ออาหาร",
+                placeholder="เช่น Tom Yum"
+            )
+
+            image_file = st.file_uploader(
+                "เลือกรูปอาหาร",
+                type=[
+                    "jpg",
+                    "jpeg",
+                    "png",
+                    "webp"
+                ]
+            )
+
+            submit_food = st.form_submit_button(
+                "➕ เพิ่ม Food"
+            )
+
+            if submit_food:
+
+                if not food_id or not food_name:
+
+                    st.error(
+                        "กรุณากรอก Food ID และชื่ออาหาร"
+                    )
+
+                else:
+
+                    image_name = ""
+
+                    if image_file:
+
+                        image_name = image_file.name
+
+                        image_folder = (
+                            Path(__file__).parent
+                            / "images"
+                        )
+
+                        image_folder.mkdir(
+                            exist_ok=True
+                        )
+
+                        image_path = (
+                            image_folder
+                            / image_name
+                        )
+
+                        with open(
+                            image_path,
+                            "wb"
+                        ) as file:
+
+                            file.write(
+                                image_file.getbuffer()
+                            )
+
+                    try:
+
+                        result = add_food(
+                            food_id,
+                            food_name,
+                            image_name
+                        )
+
+                        if result:
+
+                            st.success(
+                                "เพิ่ม Food สำเร็จ"
+                            )
+
+                            st.rerun()
+
+                        else:
+
+                            st.error(
+                                "ไม่สามารถเพิ่ม Food ได้"
+                            )
+
+                    except Exception as e:
+
+                        st.error(
+                            f"เกิดข้อผิดพลาด: {e}"
+                        )
+
+        st.divider()
+
+        st.subheader("❤️ เพิ่มความสัมพันธ์ LIKES")
+
+        user_options = get_user_options()
+        food_options = get_food_options()
+
+        if user_options and food_options:
+
+            with st.form("add_like_form"):
+
+                selected_user = st.selectbox(
+                    "User",
+                    list(user_options.keys())
+                )
+
+                selected_food = st.selectbox(
+                    "Food",
+                    list(food_options.keys())
+                )
+
+                submit_like = st.form_submit_button(
+                    "❤️ เพิ่ม LIKES"
+                )
+
+                if submit_like:
+
+                    try:
+
+                        result = add_like(
+                            user_options[selected_user],
+                            food_options[selected_food]
+                        )
+
+                        if result:
+
+                            st.success(
+                                "เพิ่ม LIKES สำเร็จ"
+                            )
+
+                            st.rerun()
+
+                        else:
+
+                            st.error(
+                                "ไม่สามารถเพิ่ม LIKES ได้"
+                            )
+
+                    except Exception as e:
+
+                        st.error(
+                            f"เกิดข้อผิดพลาด: {e}"
+                        )
+
+        else:
+
+            st.info(
+                "ต้องมี User และ Food ก่อน"
+            )
+
+
+    # =================================================
+    # UPDATE
+    # =================================================
+
+    with tab2:
+
+        st.subheader("✏️ แก้ไข User")
+
+        user_options = get_user_options()
+
+        if user_options:
+
+            selected_user = st.selectbox(
+                "เลือก User ที่ต้องการแก้ไข",
+                list(user_options.keys()),
+                key="edit_user"
+            )
+
+            selected_user_id = user_options[
+                selected_user
+            ]
+
+            current_name = selected_user.split(
+                " - ",
+                1
+            )[1]
+
+            new_name = st.text_input(
+                "ชื่อใหม่",
+                value=current_name
+            )
+
+            if st.button(
+                "💾 บันทึก User",
+                key="save_user"
+            ):
+
+                if not new_name:
+
+                    st.error(
+                        "กรุณากรอกชื่อ"
+                    )
+
+                else:
+
+                    try:
+
+                        result = update_user(
+                            selected_user_id,
+                            new_name
+                        )
+
+                        if result:
+
+                            st.success(
+                                "แก้ไข User สำเร็จ"
+                            )
+
+                            st.rerun()
+
+                    except Exception as e:
+
+                        st.error(
+                            f"เกิดข้อผิดพลาด: {e}"
+                        )
+
+        st.divider()
+
+        st.subheader("✏️ แก้ไข Food")
+
+        food_options = get_food_options()
+
+        if food_options:
+
+            selected_food = st.selectbox(
+                "เลือก Food ที่ต้องการแก้ไข",
+                list(food_options.keys()),
+                key="edit_food"
+            )
+
+            selected_food_id = food_options[
+                selected_food
+            ]
+
+            foods = get_foods()
+
+            current_food = next(
+                (
+                    food
+                    for food in foods
+                    if food["food_id"]
+                    == selected_food_id
+                ),
+                None
+            )
+
+            if current_food:
+
+                show_food_image(
+                    current_food.get("image"),
+                    width=200
+                )
+
+                new_food_name = st.text_input(
+                    "ชื่ออาหารใหม่",
+                    value=current_food["name"]
+                )
+
+                new_image_file = st.file_uploader(
+                    "เปลี่ยนรูปอาหาร (ถ้าต้องการ)",
+                    type=[
+                        "jpg",
+                        "jpeg",
+                        "png",
+                        "webp"
+                    ],
+                    key="edit_image"
+                )
+
+                if st.button(
+                    "💾 บันทึก Food",
+                    key="save_food"
+                ):
+
+                    image_name = current_food.get(
+                        "image",
+                        ""
+                    )
+
+                    if new_image_file:
+
+                        image_name = new_image_file.name
+
+                        image_folder = (
+                            Path(__file__).parent
+                            / "images"
+                        )
+
+                        image_folder.mkdir(
+                            exist_ok=True
+                        )
+
+                        image_path = (
+                            image_folder
+                            / image_name
+                        )
+
+                        with open(
+                            image_path,
+                            "wb"
+                        ) as file:
+
+                            file.write(
+                                new_image_file.getbuffer()
+                            )
+
+                    try:
+
+                        result = update_food(
+                            selected_food_id,
+                            new_food_name,
+                            image_name
+                        )
+
+                        if result:
+
+                            st.success(
+                                "แก้ไข Food สำเร็จ"
+                            )
+
+                            st.rerun()
+
+                    except Exception as e:
+
+                        st.error(
+                            f"เกิดข้อผิดพลาด: {e}"
+                        )
+
+
+    # =================================================
+    # DELETE
+    # =================================================
+
+    with tab3:
+
+        st.subheader("🗑️ ลบ User")
+
+        user_options = get_user_options()
+
+        if user_options:
+
+            selected_user = st.selectbox(
+                "เลือก User ที่ต้องการลบ",
+                list(user_options.keys()),
+                key="delete_user"
+            )
+
+            selected_user_id = user_options[
+                selected_user
+            ]
+
+            confirm_user = st.checkbox(
+                "ฉันยืนยันว่าต้องการลบ User นี้",
+                key="confirm_delete_user"
+            )
+
+            if st.button(
+                "🗑️ ลบ User",
+                key="delete_user_button"
+            ):
+
+                if not confirm_user:
+
+                    st.warning(
+                        "กรุณาติ๊กยืนยันก่อนลบ"
+                    )
+
+                else:
+
+                    try:
+
+                        delete_user(
+                            selected_user_id
+                        )
+
+                        st.success(
+                            "ลบ User สำเร็จ"
+                        )
+
+                        st.rerun()
+
+                    except Exception as e:
+
+                        st.error(
+                            f"เกิดข้อผิดพลาด: {e}"
+                        )
+
+        st.divider()
+
+        st.subheader("🗑️ ลบ Food")
+
+        food_options = get_food_options()
+
+        if food_options:
+
+            selected_food = st.selectbox(
+                "เลือก Food ที่ต้องการลบ",
+                list(food_options.keys()),
+                key="delete_food"
+            )
+
+            selected_food_id = food_options[
+                selected_food
+            ]
+
+            confirm_food = st.checkbox(
+                "ฉันยืนยันว่าต้องการลบ Food นี้",
+                key="confirm_delete_food"
+            )
+
+            if st.button(
+                "🗑️ ลบ Food",
+                key="delete_food_button"
+            ):
+
+                if not confirm_food:
+
+                    st.warning(
+                        "กรุณาติ๊กยืนยันก่อนลบ"
+                    )
+
+                else:
+
+                    try:
+
+                        delete_food(
+                            selected_food_id
+                        )
+
+                        st.success(
+                            "ลบ Food สำเร็จ"
+                        )
+
+                        st.rerun()
+
+                    except Exception as e:
+
+                        st.error(
+                            f"เกิดข้อผิดพลาด: {e}"
+                        )
+
+
+    # =================================================
+    # LIKES MANAGEMENT
+    # =================================================
+
+    with tab4:
+
+        st.subheader("❤️ ลบความสัมพันธ์ LIKES")
+
+        user_options = get_user_options()
+
+        if user_options:
+
+            selected_user = st.selectbox(
+                "เลือก User",
+                list(user_options.keys()),
+                key="like_user"
+            )
+
+            selected_user_id = user_options[
+                selected_user
+            ]
+
+            likes = get_user_likes(
+                selected_user_id
+            )
+
+            if likes:
+
+                food_options = {
+                    f"{food['food_id']} - {food['name']}":
+                    food["food_id"]
+                    for food in likes
+                }
+
+                selected_food = st.selectbox(
+                    "เลือก Food ที่ต้องการเอา Like ออก",
+                    list(food_options.keys())
+                )
+
+                if st.button(
+                    "💔 ลบ LIKES"
+                ):
+
+                    try:
+
+                        delete_like(
+                            selected_user_id,
+                            food_options[selected_food]
+                        )
+
+                        st.success(
+                            "ลบ LIKES สำเร็จ"
+                        )
+
+                        st.rerun()
+
+                    except Exception as e:
+
+                        st.error(
+                            f"เกิดข้อผิดพลาด: {e}"
+                        )
+
+            else:
+
+                st.info(
+                    "User คนนี้ยังไม่มี LIKES"
+                )
