@@ -1,0 +1,4 @@
+streamlit>=1.64,<2
+neo4j>=6.3,<7
+pandas>=2.2,<3
+graphviz>=0.20,<1
