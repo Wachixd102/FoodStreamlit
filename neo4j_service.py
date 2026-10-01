@@ -188,6 +188,7 @@ def get_graph(user_id):
 
             f.food_id AS target_id,
             f.name AS target_name,
+            f.image AS image,
             "Food" AS target_label,
 
             type(r) AS relationship
