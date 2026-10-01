@@ -113,18 +113,11 @@ with st.sidebar:
 
 st.markdown(
     """
-    <div class="hero">
-
-        <h1>
-            🍜 Food Recommendation System
-        </h1>
-
-        <p>
-            ระบบแนะนำอาหารด้วย Graph Database
-        </p>
-
-    </div>
-    """,
+<div class="hero">
+<h1>🍜 Food Recommendation System</h1>
+<p>ระบบแนะนำอาหารด้วย Graph Database</p>
+</div>
+""",
     unsafe_allow_html=True,
 )
 
