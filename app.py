@@ -453,9 +453,7 @@ elif page == "🕸️ Graph Explorer":
     user_options = get_user_options()
 
     if not user_options:
-
         st.warning("ยังไม่มี User")
-
         st.stop()
 
     selected_user = st.selectbox(
@@ -475,7 +473,38 @@ elif page == "🕸️ Graph Explorer":
 
     else:
 
-        st.subheader("ความสัมพันธ์ User → Food")
+        st.subheader("🕸️ ความสัมพันธ์ User → Food")
+
+        # แสดง User
+        st.markdown(
+            f"### 👤 {selected_user}"
+        )
+
+        st.markdown("#### ❤️ อาหารที่ชอบ")
+
+        # แสดงอาหารพร้อมรูป
+        cols = st.columns(3)
+
+        for i, item in enumerate(graph_data):
+
+            with cols[i % 3]:
+
+                show_food_image(
+                    item["target_id"] + ".jpg",
+                    width=200
+                )
+
+                st.markdown(
+                    f"**🍽️ {item['target_name']}**"
+                )
+
+                st.caption(
+                    f"ความสัมพันธ์: {item['relationship']}"
+                )
+
+        st.divider()
+
+        st.subheader("📋 ข้อมูลความสัมพันธ์")
 
         df = pd.DataFrame(graph_data)
 
