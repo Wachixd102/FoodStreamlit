@@ -475,31 +475,61 @@ elif page == "🕸️ Graph Explorer":
 
         st.subheader("🕸️ ความสัมพันธ์ User → Food")
 
-        # แสดง User
-        st.markdown(
-            f"### 👤 {selected_user}"
-        )
-
-        st.markdown("#### ❤️ อาหารที่ชอบ")
-
-        # แสดงอาหารพร้อมรูป
         cols = st.columns(3)
 
         for i, item in enumerate(graph_data):
 
             with cols[i % 3]:
 
-                show_food_image(
-                    item["target_id"] + ".jpg",
-                    width=200
-                )
+                # -------------------------
+                # ข้อมูลอาหาร
+                # -------------------------
+
+                food_name = item.get("target_name", "ไม่ทราบชื่อ")
+                image_name = item.get("image", "")
 
                 st.markdown(
-                    f"**🍽️ {item['target_name']}**"
+                    f"### 🍽️ {food_name}"
                 )
 
                 st.caption(
-                    f"ความสัมพันธ์: {item['relationship']}"
+                    f"รูป: {image_name}"
+                )
+
+                # -------------------------
+                # โหลดรูป
+                # -------------------------
+
+                if image_name:
+
+                    image_path = (
+                        Path(__file__).parent
+                        / "images"
+                        / image_name
+                    )
+
+                    if image_path.exists():
+
+                        st.image(
+                            str(image_path),
+                            width=220
+                        )
+
+                    else:
+
+                        st.error(
+                            f"❌ หาไฟล์ไม่เจอ\n\n"
+                            f"{image_path}"
+                        )
+
+                else:
+
+                    st.warning(
+                        "⚠️ Food นี้ไม่มีชื่อไฟล์รูปใน Neo4j"
+                    )
+
+                st.caption(
+                    f"❤️ {item.get('relationship', 'LIKES')}"
                 )
 
         st.divider()
