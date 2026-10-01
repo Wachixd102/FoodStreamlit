@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import mimetypes
 
 import pandas as pd
 import streamlit as st
@@ -41,42 +42,27 @@ st.set_page_config(
 # CSS
 # =====================================================
 
-st.markdown(
-    """
+st.markdown(r'''
 <style>
-
-.hero {
-    padding: 25px;
-    border-radius: 15px;
-    background: linear-gradient(135deg, #ff8a00, #ff4d4d);
-    color: white;
-    margin-bottom: 25px;
-}
-
-.hero h1 {
-    margin: 0;
-    font-size: 36px;
-}
-
-.hero p {
-    margin-top: 8px;
-    font-size: 17px;
-}
-
-.card {
-    padding: 18px;
-    border-radius: 12px;
-    border: 1px solid #ddd;
-    margin-bottom: 15px;
-}
-
+.stApp{background:radial-gradient(circle at 10% 0%,rgba(255,159,67,.08),transparent 30%),radial-gradient(circle at 90% 10%,rgba(255,95,109,.06),transparent 28%),#08090c;color:#f5f5f5;}
+.block-container{max-width:1500px;padding-top:2rem;padding-bottom:4rem;}
+#MainMenu{visibility:hidden;} footer{visibility:hidden;}
+.hero{position:relative;overflow:hidden;padding:34px 38px;border-radius:24px;margin-bottom:28px;border:1px solid rgba(255,255,255,.1);background:radial-gradient(circle at 85% 20%,rgba(255,180,80,.28),transparent 28%),linear-gradient(135deg,#17191f,#0d0f14 55%,#171115);box-shadow:0 20px 60px rgba(0,0,0,.35);}
+.hero h1{margin:10px 0 0;font-size:42px;line-height:1.1;color:#fff;letter-spacing:-1px;} .hero p{margin:12px 0 0;color:#b8bec8;font-size:16px;}
+section[data-testid="stSidebar"]{background:linear-gradient(180deg,#0d0f13,#090a0d);border-right:1px solid rgba(255,255,255,.07);}
+section[data-testid="stSidebar"] [data-testid="stRadio"] label{border-radius:12px;padding:7px 10px;transition:.2s;} section[data-testid="stSidebar"] [data-testid="stRadio"] label:hover{background:rgba(255,159,67,.09);}
+h1,h2,h3{color:#fff!important;letter-spacing:-.3px;} p,label{color:#b8bec8;}
+.card{padding:16px;border-radius:20px;border:1px solid rgba(255,255,255,.09);margin-bottom:18px;background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));box-shadow:0 14px 38px rgba(0,0,0,.22);transition:.2s;} .card:hover{transform:translateY(-4px);border-color:rgba(255,159,67,.3);box-shadow:0 20px 50px rgba(0,0,0,.34);}
+div[data-testid="stMetric"]{background:linear-gradient(145deg,#15181e,#0f1116);border:1px solid rgba(255,255,255,.09);border-radius:20px;padding:22px 24px;box-shadow:0 12px 35px rgba(0,0,0,.2);} div[data-testid="stMetricLabel"]{color:#9da3ae!important;} div[data-testid="stMetricValue"]{color:#fff!important;font-weight:750;}
+div[data-baseweb="select"]>div,div[data-testid="stTextInput"] input,div[data-testid="stTextArea"] textarea{background:#111318!important;color:#fff!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:12px!important;}
+.stButton>button,.stFormSubmitButton>button{border:1px solid rgba(255,159,67,.3);border-radius:12px;background:linear-gradient(135deg,#ff9f43,#ff6b4a);color:#111;font-weight:750;min-height:42px;transition:.2s;} .stButton>button:hover,.stFormSubmitButton>button:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(255,110,65,.22);}
+button[data-baseweb="tab"]{color:#9da3ae!important;font-weight:650;} button[data-baseweb="tab"][aria-selected="true"]{color:#ffb15a!important;} div[data-baseweb="tab-highlight"]{background:#ff9f43!important;}
+div[data-testid="stDataFrame"]{border:1px solid rgba(255,255,255,.09);border-radius:16px;overflow:hidden;} hr{border-color:rgba(255,255,255,.08)!important;}
+.food-image{width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:16px;margin-bottom:14px;background:#0b0d11;border:1px solid rgba(255,255,255,.07);}.food-image img{width:100%;height:100%;object-fit:contain;padding:6px;}
+.premium-label{display:inline-block;padding:5px 10px;border-radius:999px;background:rgba(255,159,67,.1);border:1px solid rgba(255,159,67,.2);color:#ffb15a;font-size:12px;font-weight:700;letter-spacing:.5px;}
 </style>
-""",
-    unsafe_allow_html=True
-)
+''',unsafe_allow_html=True)
 
-
-# =====================================================
 # FUNCTIONS
 # =====================================================
 
@@ -88,36 +74,19 @@ def show_food_image(image_name, width=220):
     image_path = Path(__file__).parent / "images" / image_name
 
     if image_path.exists():
-
-        st.markdown(
-            f"""
-            <div style="
-                width: 100%;
-                height: 220px;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                overflow: hidden;
-                border-radius: 12px;
-                margin-bottom: 10px;
-            ">
-                <img
-                    src="data:image/jpeg;base64,{__import__('base64').b64encode(open(image_path, 'rb').read()).decode()}"
-                    style="
-                        width: 100%;
-                        height: 100%;
-                        object-fit: cover;
-                    "
-                >
+        import base64
+        mime_type, _ = mimetypes.guess_type(str(image_path))
+        if not mime_type:
+            mime_type = "image/jpeg"
+        with open(image_path, "rb") as file:
+            image_base64 = base64.b64encode(file.read()).decode()
+        st.markdown(f'''
+            <div class="food-image" style="height:{width}px;">
+                <img src="data:{mime_type};base64,{image_base64}" alt="{image_name}">
             </div>
-            """,
-            unsafe_allow_html=True
-        )
-
+        ''', unsafe_allow_html=True)
     else:
-        st.warning(
-            f"หารูปไม่เจอ: {image_name}"
-        )
+        st.warning(f"หารูปไม่เจอ: {image_name}")
 
 
 def get_user_options():
@@ -147,8 +116,9 @@ def get_food_options():
 st.markdown(
     """
 <div class="hero">
+<span class="premium-label">GRAPH-POWERED FOOD DISCOVERY</span>
 <h1>🍜 Food Recommendation System</h1>
-<p>ระบบแนะนำอาหารด้วย Graph Database</p>
+<p>ค้นพบเมนูที่เข้ากับคุณ ผ่านความสัมพันธ์ของผู้ใช้และอาหารบน Graph Database</p>
 </div>
 """,
     unsafe_allow_html=True
@@ -159,7 +129,7 @@ st.markdown(
 # SIDEBAR
 # =====================================================
 
-st.sidebar.title("📌 เมนู")
+st.sidebar.markdown("<div class='premium-label'>FOOD GRAPH</div><h2 style='margin:10px 0 4px;'>🍜 Discover</h2><div style='color:#8f96a3;font-size:13px;margin-bottom:14px;'>Food Recommendation System</div>", unsafe_allow_html=True)
 
 page = st.sidebar.radio(
     "เลือกหน้า",
@@ -193,7 +163,9 @@ if not ping():
 
 if page == "🏠 Dashboard":
 
+    st.markdown('<div class="premium-label">OVERVIEW</div>', unsafe_allow_html=True)
     st.header("🏠 Dashboard")
+    st.caption("ภาพรวมข้อมูลผู้ใช้งาน อาหาร และความสัมพันธ์ในระบบ")
 
     metrics = get_dashboard_metrics()
 
@@ -244,7 +216,9 @@ if page == "🏠 Dashboard":
 
 elif page == "🍱 Recommendations":
 
+    st.markdown('<div class="premium-label">PERSONALIZED</div>', unsafe_allow_html=True)
     st.header("🍱 Food Recommendations")
+    st.caption("ระบบแนะนำอาหารจากความชอบที่เชื่อมโยงกันของผู้ใช้งาน")
 
     user_options = get_user_options()
 
@@ -328,7 +302,9 @@ elif page == "🍱 Recommendations":
 
 elif page == "🔎 Food Search":
 
+    st.markdown('<div class="premium-label">DISCOVER</div>', unsafe_allow_html=True)
     st.header("🔎 Food Search")
+    st.caption("ค้นหาเมนูอาหารจากฐานข้อมูลของระบบ")
 
     keyword = st.text_input(
         "ค้นหาอาหาร",
@@ -379,7 +355,9 @@ elif page == "🔎 Food Search":
 
 elif page == "❤️ My Likes":
 
+    st.markdown('<div class="premium-label">YOUR COLLECTION</div>', unsafe_allow_html=True)
     st.header("❤️ My Likes")
+    st.caption("รวมเมนูอาหารที่ผู้ใช้งานเลือกถูกใจ")
 
     user_options = get_user_options()
 
@@ -448,7 +426,9 @@ elif page == "❤️ My Likes":
 
 elif page == "🕸️ Graph Explorer":
 
+    st.markdown('<div class="premium-label">GRAPH VIEW</div>', unsafe_allow_html=True)
     st.header("🕸️ Graph Explorer")
+    st.caption("สำรวจความสัมพันธ์ระหว่าง User และ Food")
 
     user_options = get_user_options()
 
@@ -551,7 +531,9 @@ elif page == "🕸️ Graph Explorer":
 
 elif page == "⚙️ จัดการข้อมูล":
 
+    st.markdown('<div class="premium-label">ADMIN CONTROL</div>', unsafe_allow_html=True)
     st.header("⚙️ จัดการข้อมูล")
+    st.caption("จัดการ User, Food และความสัมพันธ์ LIKES")
 
     st.info(
         "หน้านี้ใช้สำหรับ เพิ่ม / แก้ไข / ลบข้อมูลในระบบ"
