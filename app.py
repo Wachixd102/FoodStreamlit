@@ -6,6 +6,7 @@ import mimetypes
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 from neo4j_service import (
     add_food,
@@ -17,6 +18,7 @@ from neo4j_service import (
     get_dashboard_metrics,
     get_foods,
     get_graph,
+    run_query,
     get_user_likes,
     get_users,
     ping,
@@ -190,6 +192,241 @@ if not ping():
 # =====================================================
 # DASHBOARD
 # =====================================================
+
+def render_network_graph(graph_rows, selected_user_id, height=650):
+    'Render a Neo4j-style interactive network graph in an HTML/SVG canvas.'
+    import json
+    import math
+
+    users = {}
+    foods = {}
+    edges = []
+
+    for row in graph_rows:
+        uid = str(row.get("source_id", ""))
+        uname = str(row.get("source_name", uid))
+        fid = str(row.get("target_id", ""))
+        fname = str(row.get("target_name", fid))
+
+        users[uid] = uname
+        foods[fid] = {
+            "name": fname,
+            "image": row.get("image", "")
+        }
+
+        edges.append({
+            "source": uid,
+            "target": fid,
+            "label": str(row.get("relationship", "LIKES"))
+        })
+
+    # Include all users and foods so the graph shows the complete network.
+    for row in run_query('''
+        MATCH (u:User)
+        RETURN u.user_id AS user_id, u.name AS name
+        ORDER BY u.user_id
+    '''):
+        users[str(row["user_id"])] = str(row["name"])
+
+    for row in run_query('''
+        MATCH (f:Food)
+        RETURN f.food_id AS food_id, f.name AS name, f.image AS image
+        ORDER BY f.food_id
+    '''):
+        foods[str(row["food_id"])] = {
+            "name": str(row["name"]),
+            "image": row.get("image", "")
+        }
+
+    width = 1180
+    center_x = 500
+    center_y = 325
+    nodes = []
+    user_ids = list(users.keys())
+    food_ids = list(foods.keys())
+    selected = str(selected_user_id)
+
+    nodes.append({
+        "id": selected,
+        "label": users.get(selected, selected),
+        "type": "user",
+        "selected": True,
+        "x": center_x,
+        "y": center_y,
+    })
+
+    other_users = [uid for uid in user_ids if uid != selected]
+    for i, uid in enumerate(other_users):
+        angle = math.radians(-150 + (300 / max(1, len(other_users) - 1)) * i) if len(other_users) > 1 else math.radians(180)
+        nodes.append({
+            "id": uid,
+            "label": users[uid],
+            "type": "user",
+            "selected": False,
+            "x": center_x + math.cos(angle) * 350,
+            "y": center_y + math.sin(angle) * 245,
+        })
+
+    for i, fid in enumerate(food_ids):
+        angle = math.radians(-82 + (164 / max(1, len(food_ids) - 1)) * i) if len(food_ids) > 1 else math.radians(0)
+        nodes.append({
+            "id": fid,
+            "label": foods[fid]["name"],
+            "type": "food",
+            "selected": False,
+            "x": center_x + math.cos(angle) * 445,
+            "y": center_y + math.sin(angle) * 275,
+        })
+
+    seen = set()
+    clean_edges = []
+    for edge in edges:
+        key = (edge["source"], edge["target"])
+        if key not in seen:
+            seen.add(key)
+            clean_edges.append(edge)
+
+    payload = {
+        "nodes": nodes,
+        "edges": clean_edges,
+        "selected": selected,
+    }
+
+    safe_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
+
+    graph_html = f'''<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+*{{box-sizing:border-box}}
+html,body{{margin:0;width:100%;height:100%;overflow:hidden;background:#090908;font-family:Inter,Arial,sans-serif}}
+#wrap{{position:relative;width:100%;height:100%;background:radial-gradient(circle at 50% 45%,rgba(214,179,106,.055),transparent 38%),linear-gradient(135deg,#0b0b09,#11100c 55%,#080807);border:1px solid rgba(214,179,106,.20);overflow:hidden}}
+svg{{width:100%;height:100%;display:block;cursor:grab;user-select:none}}
+svg.dragging{{cursor:grabbing}}
+.edge{{stroke:#8c8a82;stroke-width:1.25;fill:none;opacity:.72}}
+.edge.selected{{stroke:#d6b36a;stroke-width:1.7;opacity:.96}}
+.edge-label{{font-size:9px;fill:#77736b;letter-spacing:.5px;pointer-events:none}}
+.edge-label.selected{{fill:#e8cc8e}}
+.user-node{{fill:#989ca5;stroke:#d7d9dc;stroke-width:1.2;filter:drop-shadow(0 4px 8px rgba(0,0,0,.35))}}
+.user-node.selected{{fill:#0b0b0a;stroke:#e1c27b;stroke-width:2.3;filter:drop-shadow(0 0 12px rgba(214,179,106,.28))}}
+.food-node{{fill:#12120f;stroke:#d5d0c3;stroke-width:1.5;filter:drop-shadow(0 4px 8px rgba(0,0,0,.35))}}
+.food-node.liked{{stroke:#d6b36a;stroke-width:2.1;fill:#17140e}}
+.node-label{{font-size:12px;fill:#ddd8cc;pointer-events:none;text-anchor:middle}}
+.food-label{{font-size:11px;fill:#eee9dd;pointer-events:none;text-anchor:middle}}
+.toolbar{{position:absolute;top:14px;right:14px;display:flex;gap:7px;z-index:5}}
+.tool{{height:34px;min-width:34px;padding:0 11px;border:1px solid rgba(214,179,106,.28);border-radius:2px;background:rgba(16,16,14,.92);color:#e9dfca;font-weight:600;cursor:pointer;backdrop-filter:blur(8px);transition:.2s}}
+.tool:hover{{border-color:#d6b36a;color:#f1d99b;transform:translateY(-1px)}}
+.hint{{position:absolute;left:14px;top:14px;padding:8px 12px;border:1px solid rgba(214,179,106,.18);background:rgba(13,13,11,.78);color:#8f8a80;font-size:11px;letter-spacing:.3px;border-radius:2px;z-index:5}}
+.legend{{position:absolute;left:14px;bottom:14px;display:flex;gap:15px;align-items:center;padding:9px 13px;border:1px solid rgba(214,179,106,.18);background:rgba(13,13,11,.84);color:#aaa397;font-size:10px;letter-spacing:.5px;z-index:5}}
+.legend span{{display:flex;align-items:center;gap:6px}}
+.dot{{width:11px;height:11px;border-radius:50%;background:#989ca5;border:1px solid #d7d9dc}}
+.dot.sel{{background:#0b0b0a;border:1px solid #e1c27b}}
+.box{{width:15px;height:11px;border-radius:1px;background:#12120f;border:1px solid #d5d0c3}}
+.line{{width:24px;height:0;border-top:1px solid #8c8a82}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div class="hint">ลากเพื่อเลื่อน · ลากโหนดเพื่อจัดตำแหน่ง · scroll เพื่อซูม</div>
+  <div class="toolbar">
+    <button class="tool" id="plus">＋</button>
+    <button class="tool" id="minus">－</button>
+    <button class="tool" id="fit">พอดีกรอบ</button>
+    <button class="tool" id="reset">จัดวางใหม่</button>
+  </div>
+  <div class="legend">
+    <span><i class="dot"></i>User</span>
+    <span><i class="dot sel"></i>User ที่เลือก</span>
+    <span><i class="box"></i>Food</span>
+    <span><i class="line"></i>LIKES</span>
+  </div>
+  <svg id="graph" viewBox="0 0 {width} {height}" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#8c8a82"></path>
+      </marker>
+      <marker id="arrowGold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#d6b36a"></path>
+      </marker>
+    </defs>
+    <g id="viewport">
+      <g id="edges"></g>
+      <g id="nodes"></g>
+    </g>
+  </svg>
+</div>
+<script>
+const DATA = {safe_json};
+const svg = document.getElementById('graph');
+const viewport = document.getElementById('viewport');
+const edgeLayer = document.getElementById('edges');
+const nodeLayer = document.getElementById('nodes');
+const ns = 'http://www.w3.org/2000/svg';
+let scale = 1, tx = 0, ty = 0;
+let dragPan = null, dragNode = null;
+const nodeMap = new Map(DATA.nodes.map(n => [n.id, n]));
+
+function el(name, attrs={{}}){{const e=document.createElementNS(ns,name);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);return e}}
+function isLikedEdge(e){{return e.source===DATA.selected}}
+function render(){{
+  edgeLayer.innerHTML=''; nodeLayer.innerHTML='';
+  for(const e of DATA.edges){{
+    const a=nodeMap.get(e.source), b=nodeMap.get(e.target); if(!a||!b) continue;
+    const line=el('line',{{x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:'edge'+(isLikedEdge(e)?' selected':'')}});
+    line.setAttribute('marker-end',isLikedEdge(e)?'url(#arrowGold)':'url(#arrow)');
+    edgeLayer.appendChild(line);
+    const t=el('text',{{x:(a.x+b.x)/2,y:(a.y+b.y)/2-6,class:'edge-label'+(isLikedEdge(e)?' selected':'')}});
+    t.textContent=e.label||'LIKES'; edgeLayer.appendChild(t);
+  }}
+  for(const n of DATA.nodes){{
+    const g=el('g',{{class:'node',transform:`translate(${{n.x}},${{n.y}})`,cursor:'pointer'}});
+    if(n.type==='user'){{
+      const c=el('circle',{{r:n.selected?18:11,class:'user-node'+(n.selected?' selected':'')}}); g.appendChild(c);
+      const t=el('text',{{y:n.selected?34:26,class:'node-label'}});t.textContent=n.label;g.appendChild(t);
+    }} else {{
+      const w=Math.max(92,Math.min(150,n.label.length*8+26));
+      const liked=DATA.edges.some(e=>e.source===DATA.selected&&e.target===n.id);
+      const r=el('rect',{{x:-w/2,y:-17,width:w,height:34,rx:2,class:'food-node'+(liked?' liked':'')}});g.appendChild(r);
+      const t=el('text',{{y:4,class:'food-label'}});t.textContent=n.label;g.appendChild(t);
+    }}
+    g.addEventListener('mousedown',ev=>{{ev.stopPropagation();dragNode={{node:n,startX:ev.clientX,startY:ev.clientY,ox:n.x,oy:n.y}};}});
+    nodeLayer.appendChild(g);
+  }}
+}}
+function setTransform(){{viewport.setAttribute('transform',`translate(${{tx}},${{ty}}) scale(${{scale}})`);}}
+function zoomAt(factor){{scale=Math.max(.45,Math.min(2.6,scale*factor));setTransform();}}
+function fit(){{scale=1;tx=0;ty=0;setTransform();}}
+function resetLayout(){{
+  const center={{x:500,y:325}};
+  const selected=DATA.selected;
+  const users=DATA.nodes.filter(n=>n.type==='user'&&n.id!==selected);
+  const foods=DATA.nodes.filter(n=>n.type==='food');
+  const sel=nodeMap.get(selected); if(sel){{sel.x=center.x;sel.y=center.y;}}
+  users.forEach((n,i)=>{{const a=(-150+(300/Math.max(1,users.length-1))*i)*Math.PI/180;n.x=center.x+Math.cos(a)*350;n.y=center.y+Math.sin(a)*245;}});
+  foods.forEach((n,i)=>{{const a=(-82+(164/Math.max(1,foods.length-1))*i)*Math.PI/180;n.x=center.x+Math.cos(a)*445;n.y=center.y+Math.sin(a)*275;}});
+  fit();render();
+}}
+svg.addEventListener('mousedown',ev=>{{dragPan={{x:ev.clientX,y:ev.clientY,tx,ty}};svg.classList.add('dragging')}});
+window.addEventListener('mousemove',ev=>{{
+  if(dragNode){{const dx=(ev.clientX-dragNode.startX)/scale;const dy=(ev.clientY-dragNode.startY)/scale;dragNode.node.x=dragNode.ox+dx;dragNode.node.y=dragNode.oy+dy;render();return;}}
+  if(dragPan){{tx=dragPan.tx+(ev.clientX-dragPan.x);ty=dragPan.ty+(ev.clientY-dragPan.y);setTransform();}}
+}});
+window.addEventListener('mouseup',()=>{{dragNode=null;dragPan=null;svg.classList.remove('dragging')}});
+svg.addEventListener('wheel',ev=>{{ev.preventDefault();zoomAt(ev.deltaY<0?1.10:.91)}},{{passive:false}});
+document.getElementById('plus').onclick=()=>zoomAt(1.18);
+document.getElementById('minus').onclick=()=>zoomAt(.85);
+document.getElementById('fit').onclick=fit;
+document.getElementById('reset').onclick=resetLayout;
+render();setTransform();
+</script>
+</body>
+</html>'''
+
+    components.html(graph_html, height=height, scrolling=False)
+
+
+
 
 if page == "🏠 Dashboard":
 
@@ -454,11 +691,12 @@ elif page == "❤️ My Likes":
 # GRAPH EXPLORER
 # =====================================================
 
+
 elif page == "🕸️ Graph Explorer":
 
     st.markdown('<div class="section-kicker">05 · THE CONNECTIONS</div>', unsafe_allow_html=True)
     st.header("Dining Connections")
-    st.caption("สำรวจสายสัมพันธ์ระหว่างแขกและเมนูผ่าน Graph Database")
+    st.caption("สำรวจเครือข่าย User และ Food แบบ Interactive Graph")
 
     user_options = get_user_options()
 
@@ -473,86 +711,44 @@ elif page == "🕸️ Graph Explorer":
 
     user_id = user_options[selected_user]
 
-    graph_data = get_graph(user_id)
+    graph_data = run_query('''
+        MATCH
+            (u:User)-[r:LIKES]->(f:Food)
+        RETURN
+            u.user_id AS source_id,
+            u.name AS source_name,
+            f.food_id AS target_id,
+            f.name AS target_name,
+            f.image AS image,
+            type(r) AS relationship
+        ORDER BY u.user_id, f.food_id
+    ''')
 
     if not graph_data:
-
-        st.info(
-            "User คนนี้ยังไม่มีความสัมพันธ์ LIKES"
-        )
-
+        st.info("ยังไม่มีความสัมพันธ์ LIKES ในระบบ")
     else:
-
-        st.subheader("Guest → Menu Connections")
-
-        cols = st.columns(3)
-
-        for i, item in enumerate(graph_data):
-
-            with cols[i % 3]:
-
-                # -------------------------
-                # ข้อมูลอาหาร
-                # -------------------------
-
-                food_name = item.get("target_name", "ไม่ทราบชื่อ")
-                image_name = item.get("image", "")
-
-                st.markdown(
-                    f"### 🍽️ {food_name}"
-                )
-
-                st.caption(
-                    f"รูป: {image_name}"
-                )
-
-                # -------------------------
-                # โหลดรูป
-                # -------------------------
-
-                if image_name:
-
-                    image_path = (
-                        Path(__file__).parent
-                        / "images"
-                        / image_name
-                    )
-
-                    if image_path.exists():
-
-                        st.image(
-                            str(image_path),
-                            width=220
-                        )
-
-                    else:
-
-                        st.error(
-                            f"❌ หาไฟล์ไม่เจอ\n\n"
-                            f"{image_path}"
-                        )
-
-                else:
-
-                    st.warning(
-                        "⚠️ Food นี้ไม่มีชื่อไฟล์รูปใน Neo4j"
-                    )
-
-                st.caption(
-                    f"❤️ {item.get('relationship', 'LIKES')}"
-                )
-
-        st.divider()
-
-        st.subheader("Connection Ledger")
-
-        df = pd.DataFrame(graph_data)
-
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True
+        st.markdown(
+            f'<span class="premium-label">SELECTED GUEST · {selected_user}</span>',
+            unsafe_allow_html=True
         )
+        st.write("")
+
+        render_network_graph(
+            graph_data,
+            user_id,
+            height=680
+        )
+
+        st.markdown('<div class="gold-rule"></div>', unsafe_allow_html=True)
+        st.caption("เส้นสีทอง = ความสัมพันธ์ของ User ที่เลือก · ลากพื้นหลังเพื่อเลื่อน · ลากโหนดเพื่อจัดตำแหน่ง")
+
+        with st.expander("ดู Connection Ledger"):
+            df = pd.DataFrame(graph_data)
+            st.dataframe(
+                df,
+                use_container_width=True,
+                hide_index=True
+            )
 
 
 # =====================================================
