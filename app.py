@@ -81,10 +81,6 @@ st.markdown(
 # =====================================================
 
 def show_food_image(image_name, width=220):
-    """
-    แสดงรูปอาหารจากโฟลเดอร์ images
-    """
-
     if not image_name:
         st.info("ยังไม่มีรูปอาหาร")
         return
@@ -92,10 +88,32 @@ def show_food_image(image_name, width=220):
     image_path = Path(__file__).parent / "images" / image_name
 
     if image_path.exists():
-        st.image(
-            str(image_path),
-            width=width
+
+        st.markdown(
+            f"""
+            <div style="
+                width: 100%;
+                height: 220px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                overflow: hidden;
+                border-radius: 12px;
+                margin-bottom: 10px;
+            ">
+                <img
+                    src="data:image/jpeg;base64,{__import__('base64').b64encode(open(image_path, 'rb').read()).decode()}"
+                    style="
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                    "
+                >
+            </div>
+            """,
+            unsafe_allow_html=True
         )
+
     else:
         st.warning(
             f"หารูปไม่เจอ: {image_name}"
