@@ -44,22 +44,47 @@ st.set_page_config(
 
 st.markdown(r'''
 <style>
-.stApp{background:radial-gradient(circle at 10% 0%,rgba(255,159,67,.08),transparent 30%),radial-gradient(circle at 90% 10%,rgba(255,95,109,.06),transparent 28%),#08090c;color:#f5f5f5;}
-.block-container{max-width:1500px;padding-top:2rem;padding-bottom:4rem;}
-#MainMenu{visibility:hidden;} footer{visibility:hidden;}
-.hero{position:relative;overflow:hidden;padding:34px 38px;border-radius:24px;margin-bottom:28px;border:1px solid rgba(255,255,255,.1);background:radial-gradient(circle at 85% 20%,rgba(255,180,80,.28),transparent 28%),linear-gradient(135deg,#17191f,#0d0f14 55%,#171115);box-shadow:0 20px 60px rgba(0,0,0,.35);}
-.hero h1{margin:10px 0 0;font-size:42px;line-height:1.1;color:#fff;letter-spacing:-1px;} .hero p{margin:12px 0 0;color:#b8bec8;font-size:16px;}
-section[data-testid="stSidebar"]{background:linear-gradient(180deg,#0d0f13,#090a0d);border-right:1px solid rgba(255,255,255,.07);}
-section[data-testid="stSidebar"] [data-testid="stRadio"] label{border-radius:12px;padding:7px 10px;transition:.2s;} section[data-testid="stSidebar"] [data-testid="stRadio"] label:hover{background:rgba(255,159,67,.09);}
-h1,h2,h3{color:#fff!important;letter-spacing:-.3px;} p,label{color:#b8bec8;}
-.card{padding:16px;border-radius:20px;border:1px solid rgba(255,255,255,.09);margin-bottom:18px;background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));box-shadow:0 14px 38px rgba(0,0,0,.22);transition:.2s;} .card:hover{transform:translateY(-4px);border-color:rgba(255,159,67,.3);box-shadow:0 20px 50px rgba(0,0,0,.34);}
-div[data-testid="stMetric"]{background:linear-gradient(145deg,#15181e,#0f1116);border:1px solid rgba(255,255,255,.09);border-radius:20px;padding:22px 24px;box-shadow:0 12px 35px rgba(0,0,0,.2);} div[data-testid="stMetricLabel"]{color:#9da3ae!important;} div[data-testid="stMetricValue"]{color:#fff!important;font-weight:750;}
-div[data-baseweb="select"]>div,div[data-testid="stTextInput"] input,div[data-testid="stTextArea"] textarea{background:#111318!important;color:#fff!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:12px!important;}
-.stButton>button,.stFormSubmitButton>button{border:1px solid rgba(255,159,67,.3);border-radius:12px;background:linear-gradient(135deg,#ff9f43,#ff6b4a);color:#111;font-weight:750;min-height:42px;transition:.2s;} .stButton>button:hover,.stFormSubmitButton>button:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(255,110,65,.22);}
-button[data-baseweb="tab"]{color:#9da3ae!important;font-weight:650;} button[data-baseweb="tab"][aria-selected="true"]{color:#ffb15a!important;} div[data-baseweb="tab-highlight"]{background:#ff9f43!important;}
-div[data-testid="stDataFrame"]{border:1px solid rgba(255,255,255,.09);border-radius:16px;overflow:hidden;} hr{border-color:rgba(255,255,255,.08)!important;}
-.food-image{width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:16px;margin-bottom:14px;background:#0b0d11;border:1px solid rgba(255,255,255,.07);}.food-image img{width:100%;height:100%;object-fit:contain;padding:6px;}
-.premium-label{display:inline-block;padding:5px 10px;border-radius:999px;background:rgba(255,159,67,.1);border:1px solid rgba(255,159,67,.2);color:#ffb15a;font-size:12px;font-weight:700;letter-spacing:.5px;}
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+:root{--gold:#d6b36a;--gold2:#f1d99b;--cream:#f4efe4;--line:rgba(214,179,106,.24)}
+.stApp{background:radial-gradient(circle at 15% 0%,rgba(214,179,106,.10),transparent 24%),linear-gradient(135deg,#070706,#0d0d0b 48%,#080807);color:var(--cream);font-family:'Inter',sans-serif}
+.block-container{max-width:1480px;padding:2.2rem 3rem 5rem;animation:pageIn .7s ease both}
+@keyframes pageIn{from{opacity:0;transform:translateY(16px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%,100%{opacity:.45}50%{opacity:1}}
+#MainMenu,footer{visibility:hidden}
+section[data-testid="stSidebar"]{background:linear-gradient(180deg,rgba(21,20,16,.98),rgba(7,7,6,.99));border-right:1px solid var(--line)}
+section[data-testid="stSidebar"]>div{padding:1.4rem .85rem}
+section[data-testid="stSidebar"] [data-testid="stRadio"]>div{gap:7px}
+section[data-testid="stSidebar"] [data-testid="stRadio"] label{border:1px solid transparent;border-radius:14px;padding:10px 12px;color:#aaa59a;transition:all .25s ease}
+section[data-testid="stSidebar"] [data-testid="stRadio"] label:hover{color:var(--gold2);background:rgba(214,179,106,.07);border-color:rgba(214,179,106,.14);transform:translateX(3px)}
+section[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"]{color:#17130b;background:linear-gradient(135deg,var(--gold2),var(--gold));box-shadow:0 8px 24px rgba(214,179,106,.16)}
+h1,h2,h3,h4{font-family:'Cormorant Garamond',serif!important;color:#f7f0df!important;letter-spacing:.2px}
+h1{font-size:3rem!important}h2{font-size:2rem!important}h3{font-size:1.45rem!important}
+p,label,.stCaption{color:#b9b3a7}
+.luxury-hero{position:relative;min-height:330px;overflow:hidden;border:1px solid var(--line);border-radius:2px;margin-bottom:38px;padding:58px 62px;display:flex;align-items:flex-end;background:linear-gradient(90deg,rgba(5,5,4,.97),rgba(5,5,4,.88) 45%,rgba(5,5,4,.42)),radial-gradient(circle at 78% 48%,rgba(214,179,106,.24),transparent 22%),linear-gradient(135deg,#211d13,#0b0b09 60%,#18150e);box-shadow:0 28px 80px rgba(0,0,0,.48)}
+.luxury-hero:before{content:'';position:absolute;inset:18px;border:1px solid rgba(214,179,106,.20);pointer-events:none}
+.luxury-hero:after{content:'✦';position:absolute;right:8%;top:18%;font-size:130px;color:rgba(214,179,106,.10);animation:shimmer 4s ease-in-out infinite}
+.hero-copy{position:relative;z-index:2;max-width:760px}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;color:var(--gold2);font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase}
+.eyebrow:before{content:'';width:38px;height:1px;background:var(--gold)}
+.hero-title{margin:12px 0 4px!important;font-size:58px!important;line-height:.94!important;text-transform:uppercase}
+.hero-sub{font-size:15px;color:#c4bfb4;max-width:650px;margin-top:18px}.gold-rule{height:1px;background:linear-gradient(90deg,var(--gold),transparent);margin:22px 0 30px}
+.section-kicker{color:var(--gold);font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:4px}
+.card{padding:18px;border-radius:2px;border:1px solid rgba(214,179,106,.16);margin-bottom:20px;background:linear-gradient(145deg,#171713,#0d0d0b);box-shadow:0 16px 42px rgba(0,0,0,.28);transition:all .35s cubic-bezier(.2,.8,.2,1);animation:rise .55s ease both}
+.card:hover{transform:translateY(-8px);border-color:rgba(214,179,106,.52);box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.food-image{width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:1px;margin-bottom:16px;background:#080807;border:1px solid rgba(255,255,255,.08);position:relative}
+.food-image:after{content:'';position:absolute;inset:0;border:1px solid rgba(214,179,106,.10);pointer-events:none}
+.food-image img{width:100%;height:100%;object-fit:contain;padding:7px;transition:transform .5s ease}.card:hover .food-image img{transform:scale(1.035)}
+div[data-testid="stMetric"]{background:linear-gradient(145deg,#171612,#0d0d0b);border:1px solid rgba(214,179,106,.18);border-radius:2px;padding:22px 24px;box-shadow:0 15px 40px rgba(0,0,0,.25)}
+div[data-testid="stMetricLabel"]{color:#aaa397!important;text-transform:uppercase;letter-spacing:1.5px;font-size:10px!important}
+div[data-testid="stMetricValue"]{color:var(--gold2)!important;font-family:'Cormorant Garamond',serif;font-size:38px!important}
+div[data-baseweb="select"]>div,div[data-testid="stTextInput"] input,div[data-testid="stTextArea"] textarea,div[data-testid="stFileUploaderDropzone"]{background:#10100e!important;color:#f4efe4!important;border:1px solid rgba(214,179,106,.18)!important;border-radius:2px!important}
+.stButton>button,.stFormSubmitButton>button{border:1px solid var(--gold)!important;border-radius:2px!important;background:linear-gradient(135deg,#e7ca8c,#b9954e)!important;color:#17130b!important;font-weight:700!important;min-height:43px;letter-spacing:.5px;transition:all .25s ease!important}
+.stButton>button:hover,.stFormSubmitButton>button:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(214,179,106,.22)}
+button[data-baseweb="tab"]{color:#8f8a80!important;font-weight:600!important}button[data-baseweb="tab"][aria-selected="true"]{color:var(--gold2)!important}div[data-baseweb="tab-highlight"]{background:var(--gold)!important}
+div[data-testid="stDataFrame"]{border:1px solid rgba(214,179,106,.16);border-radius:2px;overflow:hidden}hr{border-color:rgba(214,179,106,.16)!important}
+.premium-label{display:inline-block;padding:5px 10px;border-radius:999px;background:rgba(214,179,106,.07);border:1px solid rgba(214,179,106,.20);color:var(--gold2);font-size:10px;font-weight:700;letter-spacing:2px}
+.menu-note{color:#79746b;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:12px 5px;border-top:1px solid rgba(214,179,106,.14);margin-top:18px}
 </style>
 ''',unsafe_allow_html=True)
 
@@ -115,10 +140,13 @@ def get_food_options():
 
 st.markdown(
     """
-<div class="hero">
-<span class="premium-label">GRAPH-POWERED FOOD DISCOVERY</span>
-<h1>🍜 Food Recommendation System</h1>
-<p>ค้นพบเมนูที่เข้ากับคุณ ผ่านความสัมพันธ์ของผู้ใช้และอาหารบน Graph Database</p>
+<div class="luxury-hero">
+<div class="hero-copy">
+<div class="eyebrow">THE DINING CONCIERGE</div>
+<h1 class="hero-title">Food<br>Recommendation</h1>
+<div class="gold-rule"></div>
+<div class="hero-sub">A refined dining discovery experience, powered by Graph Database.</div>
+</div>
 </div>
 """,
     unsafe_allow_html=True
@@ -129,7 +157,7 @@ st.markdown(
 # SIDEBAR
 # =====================================================
 
-st.sidebar.markdown("<div class='premium-label'>FOOD GRAPH</div><h2 style='margin:10px 0 4px;'>🍜 Discover</h2><div style='color:#8f96a3;font-size:13px;margin-bottom:14px;'>Food Recommendation System</div>", unsafe_allow_html=True)
+st.sidebar.markdown('<div style="padding:8px 8px 18px;"><div class="eyebrow" style="font-size:9px;letter-spacing:2px;">PRIVATE DINING</div><div style="font-family:Cormorant Garamond;font-size:30px;color:#f4efe4;margin-top:7px;">Maison<br>Gastronomique</div><div style="color:#777269;font-size:10px;letter-spacing:2px;margin-top:8px;">FOOD DISCOVERY CONCIERGE</div></div>', unsafe_allow_html=True)
 
 page = st.sidebar.radio(
     "เลือกหน้า",
@@ -142,6 +170,8 @@ page = st.sidebar.radio(
         "⚙️ จัดการข้อมูล"
     ]
 )
+st.sidebar.markdown("<div class='menu-note'>Curated dining experience<br>Graph intelligence • Neo4j</div>", unsafe_allow_html=True)
+
 
 
 # =====================================================
@@ -163,9 +193,9 @@ if not ping():
 
 if page == "🏠 Dashboard":
 
-    st.markdown('<div class="premium-label">OVERVIEW</div>', unsafe_allow_html=True)
-    st.header("🏠 Dashboard")
-    st.caption("ภาพรวมข้อมูลผู้ใช้งาน อาหาร และความสัมพันธ์ในระบบ")
+    st.markdown('<div class="section-kicker">01 · HOUSE OVERVIEW</div>', unsafe_allow_html=True)
+    st.header("The Dining House")
+    st.caption("ภาพรวมของแขก เมนู และเครือข่ายความชอบภายในระบบ")
 
     metrics = get_dashboard_metrics()
 
@@ -191,7 +221,7 @@ if page == "🏠 Dashboard":
 
     st.divider()
 
-    st.subheader("👥 ผู้ใช้งาน")
+    st.subheader("Guest Registry")
 
     users = get_users()
 
@@ -216,9 +246,9 @@ if page == "🏠 Dashboard":
 
 elif page == "🍱 Recommendations":
 
-    st.markdown('<div class="premium-label">PERSONALIZED</div>', unsafe_allow_html=True)
-    st.header("🍱 Food Recommendations")
-    st.caption("ระบบแนะนำอาหารจากความชอบที่เชื่อมโยงกันของผู้ใช้งาน")
+    st.markdown("<div class='section-kicker'>02 · CHEF'S SELECTION</div>", unsafe_allow_html=True)
+    st.header("Curated For You")
+    st.caption("เมนูที่คัดสรรจากรูปแบบความชอบของแขกที่มีรสนิยมใกล้เคียงกัน")
 
     user_options = get_user_options()
 
@@ -302,9 +332,9 @@ elif page == "🍱 Recommendations":
 
 elif page == "🔎 Food Search":
 
-    st.markdown('<div class="premium-label">DISCOVER</div>', unsafe_allow_html=True)
-    st.header("🔎 Food Search")
-    st.caption("ค้นหาเมนูอาหารจากฐานข้อมูลของระบบ")
+    st.markdown('<div class="section-kicker">03 · THE MENU</div>', unsafe_allow_html=True)
+    st.header("The Dining Menu")
+    st.caption("สำรวจเมนูทั้งหมดจาก collection ของห้องอาหาร")
 
     keyword = st.text_input(
         "ค้นหาอาหาร",
@@ -355,9 +385,9 @@ elif page == "🔎 Food Search":
 
 elif page == "❤️ My Likes":
 
-    st.markdown('<div class="premium-label">YOUR COLLECTION</div>', unsafe_allow_html=True)
-    st.header("❤️ My Likes")
-    st.caption("รวมเมนูอาหารที่ผู้ใช้งานเลือกถูกใจ")
+    st.markdown('<div class="section-kicker">04 · YOUR TABLE</div>', unsafe_allow_html=True)
+    st.header("Your Dining Collection")
+    st.caption("เมนูที่แขกบันทึกไว้เป็นรายการโปรด")
 
     user_options = get_user_options()
 
@@ -426,9 +456,9 @@ elif page == "❤️ My Likes":
 
 elif page == "🕸️ Graph Explorer":
 
-    st.markdown('<div class="premium-label">GRAPH VIEW</div>', unsafe_allow_html=True)
-    st.header("🕸️ Graph Explorer")
-    st.caption("สำรวจความสัมพันธ์ระหว่าง User และ Food")
+    st.markdown('<div class="section-kicker">05 · THE CONNECTIONS</div>', unsafe_allow_html=True)
+    st.header("Dining Connections")
+    st.caption("สำรวจสายสัมพันธ์ระหว่างแขกและเมนูผ่าน Graph Database")
 
     user_options = get_user_options()
 
@@ -453,7 +483,7 @@ elif page == "🕸️ Graph Explorer":
 
     else:
 
-        st.subheader("🕸️ ความสัมพันธ์ User → Food")
+        st.subheader("Guest → Menu Connections")
 
         cols = st.columns(3)
 
@@ -514,7 +544,7 @@ elif page == "🕸️ Graph Explorer":
 
         st.divider()
 
-        st.subheader("📋 ข้อมูลความสัมพันธ์")
+        st.subheader("Connection Ledger")
 
         df = pd.DataFrame(graph_data)
 
@@ -531,9 +561,9 @@ elif page == "🕸️ Graph Explorer":
 
 elif page == "⚙️ จัดการข้อมูล":
 
-    st.markdown('<div class="premium-label">ADMIN CONTROL</div>', unsafe_allow_html=True)
-    st.header("⚙️ จัดการข้อมูล")
-    st.caption("จัดการ User, Food และความสัมพันธ์ LIKES")
+    st.markdown('<div class="section-kicker">06 · HOUSE MANAGEMENT</div>', unsafe_allow_html=True)
+    st.header("House Management")
+    st.caption("จัดการแขก เมนู และความสัมพันธ์ภายในระบบ")
 
     st.info(
         "หน้านี้ใช้สำหรับ เพิ่ม / แก้ไข / ลบข้อมูลในระบบ"
