@@ -1039,7 +1039,13 @@ elif page == "⚙️ จัดการข้อมูล":
 
         if len(user_options) >= 2:
 
-            user_ids = list(user_options.keys())
+            # ใช้ชื่อคนเป็นสิ่งที่แสดงในช่องเลือก แต่เก็บ UID ไว้เบื้องหลัง
+            users_data = get_users()
+            friend_name_by_id = {
+                str(user["user_id"]): str(user["name"])
+                for user in users_data
+            }
+            user_ids = list(friend_name_by_id.keys())
 
             # ถ้าเพิ่งสร้าง User ใหม่ ให้เลือกคนนั้นเป็นผู้ใช้หลักอัตโนมัติ
             default_user = st.session_state.get("last_created_user_id")
@@ -1052,7 +1058,7 @@ elif page == "⚙️ จัดการข้อมูล":
                     "ผู้ใช้หลัก",
                     user_ids,
                     index=user_ids.index(default_user),
-                    format_func=lambda x: user_options[x],
+                    format_func=lambda x: friend_name_by_id[x],
                     key="friend_main_user"
                 )
 
@@ -1062,7 +1068,7 @@ elif page == "⚙️ จัดการข้อมูล":
                 friend_user = st.selectbox(
                     "เพิ่มเพื่อน 1 คน",
                     friend_ids,
-                    format_func=lambda x: user_options[x],
+                    format_func=lambda x: friend_name_by_id[x],
                     key="friend_target_user"
                 )
 
@@ -1082,7 +1088,7 @@ elif page == "⚙️ จัดการข้อมูล":
                         if result:
 
                             st.success(
-                                f"เพิ่ม {user_options[friend_user]} เป็นเพื่อนของ {user_options[main_user]} สำเร็จ"
+                                f"เพิ่ม {friend_name_by_id[friend_user]} เป็นเพื่อนของ {friend_name_by_id[main_user]} สำเร็จ"
                             )
 
                             # เก็บคนหลักไว้ เพื่อเพิ่มเพื่อนคนถัดไปได้ทีละคน
