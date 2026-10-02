@@ -856,6 +856,9 @@ elif page == "⚙️ จัดการข้อมูล":
                                 "เพิ่ม User สำเร็จ"
                             )
 
+                            # จำ User ที่เพิ่งสร้าง เพื่อให้เลือกเป็นผู้ใช้หลักในส่วนเพิ่มเพื่อน
+                            st.session_state["last_created_user_id"] = user_id
+
                             st.rerun()
 
                         else:
@@ -1029,30 +1032,80 @@ elif page == "⚙️ จัดการข้อมูล":
 
         st.divider()
 
-        st.subheader("🤝 เพิ่มความสัมพันธ์ FRIENDS")
+        st.subheader("🤝 เพิ่มเพื่อนทีละ 1 คน")
+        st.caption("เลือกผู้ใช้หลัก 1 คน แล้วเลือกเพื่อนที่ต้องการเพิ่ม 1 คนต่อครั้ง")
+
         user_options = get_user_options()
 
         if len(user_options) >= 2:
+
+            user_ids = list(user_options.keys())
+
+            # ถ้าเพิ่งสร้าง User ใหม่ ให้เลือกคนนั้นเป็นผู้ใช้หลักอัตโนมัติ
+            default_user = st.session_state.get("last_created_user_id")
+            if default_user not in user_ids:
+                default_user = user_ids[0]
+
             with st.form("add_friend_form"):
-                friend_a = st.selectbox("User คนที่ 1", list(user_options.keys()), key="friend_a")
-                friend_b = st.selectbox("User คนที่ 2", list(user_options.keys()), key="friend_b")
-                submit_friend = st.form_submit_button("🤝 เพิ่มเพื่อน")
+
+                main_user = st.selectbox(
+                    "ผู้ใช้หลัก",
+                    user_ids,
+                    index=user_ids.index(default_user),
+                    format_func=lambda x: user_options[x],
+                    key="friend_main_user"
+                )
+
+                # แสดงเฉพาะ User อื่น ๆ เป็นตัวเลือกเพื่อน
+                friend_ids = [uid for uid in user_ids if uid != main_user]
+
+                friend_user = st.selectbox(
+                    "เพิ่มเพื่อน 1 คน",
+                    friend_ids,
+                    format_func=lambda x: user_options[x],
+                    key="friend_target_user"
+                )
+
+                submit_friend = st.form_submit_button(
+                    "🤝 เพิ่มเพื่อนคนนี้"
+                )
 
                 if submit_friend:
-                    if user_options[friend_a] == user_options[friend_b]:
-                        st.error("ไม่สามารถเพิ่มเพื่อนกับตัวเองได้")
-                    else:
-                        try:
-                            result = add_friend_relation(user_options[friend_a], user_options[friend_b])
-                            if result:
-                                st.success(f"เพิ่มเพื่อน {friend_a} ↔ {friend_b} สำเร็จ")
-                                st.rerun()
-                            else:
-                                st.error("ไม่สามารถเพิ่ม FRIENDS ได้")
-                        except Exception as e:
-                            st.error(f"เกิดข้อผิดพลาด: {e}")
+
+                    try:
+
+                        result = add_friend_relation(
+                            main_user,
+                            friend_user
+                        )
+
+                        if result:
+
+                            st.success(
+                                f"เพิ่ม {user_options[friend_user]} เป็นเพื่อนของ {user_options[main_user]} สำเร็จ"
+                            )
+
+                            # เก็บคนหลักไว้ เพื่อเพิ่มเพื่อนคนถัดไปได้ทีละคน
+                            st.session_state["last_created_user_id"] = main_user
+                            st.rerun()
+
+                        else:
+
+                            st.error(
+                                "ไม่สามารถเพิ่ม FRIENDS ได้"
+                            )
+
+                    except Exception as e:
+
+                        st.error(
+                            f"เกิดข้อผิดพลาด: {e}"
+                        )
+
         else:
-            st.info("ต้องมี User อย่างน้อย 2 คนก่อน")
+
+            st.info(
+                "ต้องมี User อย่างน้อย 2 คนก่อน จึงจะเพิ่มเพื่อนได้"
+            )
 
 
     # =================================================
