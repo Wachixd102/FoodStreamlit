@@ -193,6 +193,30 @@ if not ping():
 # DASHBOARD
 # =====================================================
 
+def add_friend_relation(user_id_1, user_id_2):
+    return run_query("""
+        MATCH (u1:User {user_id: $user_id_1}),
+              (u2:User {user_id: $user_id_2})
+        WHERE u1 <> u2
+        MERGE (u1)-[:FRIENDS]-(u2)
+        RETURN u1.name AS user1, u2.name AS user2
+    """, {
+        "user_id_1": user_id_1,
+        "user_id_2": user_id_2
+    })
+
+
+def delete_friend_relation(user_id_1, user_id_2):
+    return run_query("""
+        MATCH (u1:User {user_id: $user_id_1})-[r:FRIENDS]-(u2:User {user_id: $user_id_2})
+        DELETE r
+        RETURN "deleted" AS status
+    """, {
+        "user_id_1": user_id_1,
+        "user_id_2": user_id_2
+    })
+
+
 def render_network_graph(graph_rows, selected_user_id, height=650):
     'Render a Neo4j-style interactive network graph in an HTML/SVG canvas.'
     import json
@@ -205,18 +229,22 @@ def render_network_graph(graph_rows, selected_user_id, height=650):
     for row in graph_rows:
         uid = str(row.get("source_id", ""))
         uname = str(row.get("source_name", uid))
-        fid = str(row.get("target_id", ""))
-        fname = str(row.get("target_name", fid))
+        tid = str(row.get("target_id", ""))
+        tname = str(row.get("target_name", tid))
+        target_type = str(row.get("target_type", "Food"))
 
         users[uid] = uname
-        foods[fid] = {
-            "name": fname,
-            "image": row.get("image", "")
-        }
+        if target_type == "User":
+            users[tid] = tname
+        else:
+            foods[tid] = {
+                "name": tname,
+                "image": row.get("image", "")
+            }
 
         edges.append({
             "source": uid,
-            "target": fid,
+            "target": tid,
             "label": str(row.get("relationship", "LIKES"))
         })
 
@@ -308,6 +336,8 @@ svg.dragging{{cursor:grabbing}}
 .edge.selected{{stroke:#d6b36a;stroke-width:1.7;opacity:.96}}
 .edge-label{{font-size:9px;fill:#77736b;letter-spacing:.5px;pointer-events:none}}
 .edge-label.selected{{fill:#e8cc8e}}
+.edge.friend{{stroke:#8f7bd9;stroke-width:2;opacity:.9}}
+.edge-label.friend{{fill:#b7a8f0}}
 .user-node{{fill:#989ca5;stroke:#d7d9dc;stroke-width:1.2;filter:drop-shadow(0 4px 8px rgba(0,0,0,.35))}}
 .user-node.selected{{fill:#0b0b0a;stroke:#e1c27b;stroke-width:2.3;filter:drop-shadow(0 0 12px rgba(214,179,106,.28))}}
 .food-node{{fill:#12120f;stroke:#d5d0c3;stroke-width:1.5;filter:drop-shadow(0 4px 8px rgba(0,0,0,.35))}}
@@ -340,6 +370,7 @@ svg.dragging{{cursor:grabbing}}
     <span><i class="dot sel"></i>User ที่เลือก</span>
     <span><i class="box"></i>Food</span>
     <span><i class="line"></i>LIKES</span>
+    <span><i class="line" style="border-top-color:#8f7bd9"></i>FRIENDS</span>
   </div>
   <svg id="graph" viewBox="0 0 {width} {height}" preserveAspectRatio="xMidYMid meet">
     <defs>
@@ -368,15 +399,18 @@ let dragPan = null, dragNode = null;
 const nodeMap = new Map(DATA.nodes.map(n => [n.id, n]));
 
 function el(name, attrs={{}}){{const e=document.createElementNS(ns,name);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);return e}}
-function isLikedEdge(e){{return e.source===DATA.selected}}
+function isLikedEdge(e){{return e.label==='LIKES' && e.source===DATA.selected}}
+function isFriendEdge(e){{return e.label==='FRIENDS'}}
 function render(){{
   edgeLayer.innerHTML=''; nodeLayer.innerHTML='';
   for(const e of DATA.edges){{
     const a=nodeMap.get(e.source), b=nodeMap.get(e.target); if(!a||!b) continue;
-    const line=el('line',{{x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:'edge'+(isLikedEdge(e)?' selected':'')}});
-    line.setAttribute('marker-end',isLikedEdge(e)?'url(#arrowGold)':'url(#arrow)');
+    const friend=isFriendEdge(e);
+    const selectedEdge=isLikedEdge(e);
+    const line=el('line',{{x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:'edge'+(selectedEdge?' selected':'')+(friend?' friend':'')}});
+    line.setAttribute('marker-end',friend?'url(#arrow)':(selectedEdge?'url(#arrowGold)':'url(#arrow)'));
     edgeLayer.appendChild(line);
-    const t=el('text',{{x:(a.x+b.x)/2,y:(a.y+b.y)/2-6,class:'edge-label'+(isLikedEdge(e)?' selected':'')}});
+    const t=el('text',{{x:(a.x+b.x)/2,y:(a.y+b.y)/2-6,class:'edge-label'+(selectedEdge?' selected':'')+(friend?' friend':'')}});
     t.textContent=e.label||'LIKES'; edgeLayer.appendChild(t);
   }}
   for(const n of DATA.nodes){{
@@ -712,20 +746,21 @@ elif page == "🕸️ Graph Explorer":
     user_id = user_options[selected_user]
 
     graph_data = run_query('''
-        MATCH
-            (u:User)-[r:LIKES]->(f:Food)
+        MATCH (u:User)-[r]->(target)
+        WHERE type(r) IN ['LIKES', 'FRIENDS']
         RETURN
             u.user_id AS source_id,
             u.name AS source_name,
-            f.food_id AS target_id,
-            f.name AS target_name,
-            f.image AS image,
+            CASE WHEN target:User THEN target.user_id ELSE target.food_id END AS target_id,
+            target.name AS target_name,
+            CASE WHEN target:User THEN 'User' ELSE 'Food' END AS target_type,
+            target.image AS image,
             type(r) AS relationship
-        ORDER BY u.user_id, f.food_id
+        ORDER BY u.user_id, target_id
     ''')
 
     if not graph_data:
-        st.info("ยังไม่มีความสัมพันธ์ LIKES ในระบบ")
+        st.info("ยังไม่มีความสัมพันธ์ LIKES หรือ FRIENDS ในระบบ")
     else:
         st.markdown(
             f'<span class="premium-label">SELECTED GUEST · {selected_user}</span>',
@@ -740,7 +775,7 @@ elif page == "🕸️ Graph Explorer":
         )
 
         st.markdown('<div class="gold-rule"></div>', unsafe_allow_html=True)
-        st.caption("เส้นสีทอง = ความสัมพันธ์ของ User ที่เลือก · ลากพื้นหลังเพื่อเลื่อน · ลากโหนดเพื่อจัดตำแหน่ง")
+        st.caption("เส้นทอง = LIKES ของ User ที่เลือก · เส้นม่วง = FRIENDS · ลากโหนดเพื่อจัดตำแหน่ง")
 
         with st.expander("ดู Connection Ledger"):
             df = pd.DataFrame(graph_data)
@@ -770,7 +805,7 @@ elif page == "⚙️ จัดการข้อมูล":
             "➕ เพิ่มข้อมูล",
             "✏️ แก้ไขข้อมูล",
             "🗑️ ลบข้อมูล",
-            "❤️ จัดการ LIKES"
+            "❤️ จัดการความสัมพันธ์"
         ]
     )
 
@@ -991,6 +1026,33 @@ elif page == "⚙️ จัดการข้อมูล":
             st.info(
                 "ต้องมี User และ Food ก่อน"
             )
+
+        st.divider()
+
+        st.subheader("🤝 เพิ่มความสัมพันธ์ FRIENDS")
+        user_options = get_user_options()
+
+        if len(user_options) >= 2:
+            with st.form("add_friend_form"):
+                friend_a = st.selectbox("User คนที่ 1", list(user_options.keys()), key="friend_a")
+                friend_b = st.selectbox("User คนที่ 2", list(user_options.keys()), key="friend_b")
+                submit_friend = st.form_submit_button("🤝 เพิ่มเพื่อน")
+
+                if submit_friend:
+                    if user_options[friend_a] == user_options[friend_b]:
+                        st.error("ไม่สามารถเพิ่มเพื่อนกับตัวเองได้")
+                    else:
+                        try:
+                            result = add_friend_relation(user_options[friend_a], user_options[friend_b])
+                            if result:
+                                st.success(f"เพิ่มเพื่อน {friend_a} ↔ {friend_b} สำเร็จ")
+                                st.rerun()
+                            else:
+                                st.error("ไม่สามารถเพิ่ม FRIENDS ได้")
+                        except Exception as e:
+                            st.error(f"เกิดข้อผิดพลาด: {e}")
+        else:
+            st.info("ต้องมี User อย่างน้อย 2 คนก่อน")
 
 
     # =================================================
@@ -1352,3 +1414,48 @@ elif page == "⚙️ จัดการข้อมูล":
                 st.info(
                     "User คนนี้ยังไม่มี LIKES"
                 )
+
+        st.divider()
+        st.subheader("🤝 ลบความสัมพันธ์ FRIENDS")
+
+        friend_rows = run_query("""
+            MATCH (u:User)-[:FRIENDS]-(f:User)
+            RETURN DISTINCT
+                u.user_id AS user1_id,
+                u.name AS user1_name,
+                f.user_id AS user2_id,
+                f.name AS user2_name
+            ORDER BY user1_id, user2_id
+        """)
+
+        if friend_rows:
+            friend_options = {}
+            for row in friend_rows:
+                a = row["user1_id"]
+                b = row["user2_id"]
+                if a == b:
+                    continue
+                key = tuple(sorted([a, b]))
+                friend_options[key] = f'{a} - {row["user1_name"]} ↔ {b} - {row["user2_name"]}'
+
+            if friend_options:
+                selected_friend = st.selectbox(
+                    "เลือกคู่เพื่อนที่ต้องการลบ",
+                    list(friend_options.keys()),
+                    format_func=lambda x: friend_options[x],
+                    key="delete_friend_pair"
+                )
+
+                if st.button("💔 ลบเพื่อน", key="delete_friend_btn"):
+                    try:
+                        a, b = selected_friend
+                        delete_friend_relation(a, b)
+                        st.success("ลบความสัมพันธ์ FRIENDS สำเร็จ")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"เกิดข้อผิดพลาด: {e}")
+            else:
+                st.info("ยังไม่มีความสัมพันธ์ FRIENDS")
+        else:
+            st.info("ยังไม่มีความสัมพันธ์ FRIENDS")
+
