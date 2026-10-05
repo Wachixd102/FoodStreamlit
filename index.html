@@ -4,160 +4,372 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>FoodStreamlit | Homework</title>
+    <title>Wachirawit | FoodStreamlit</title>
 
     <style>
         * {
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             margin: 0;
             font-family: Arial, "Noto Sans Thai", sans-serif;
-            background: #ffffff;
-            color: #111111;
+            background: #080808;
+            color: #ffffff;
+        }
+
+        /* =========================
+           BACKGROUND
+        ========================= */
+
+        body::before {
+            content: "";
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: #00ff88;
+            opacity: 0.08;
+            filter: blur(150px);
+            top: -150px;
+            left: -150px;
+            z-index: -1;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: #00aaff;
+            opacity: 0.08;
+            filter: blur(150px);
+            right: -150px;
+            bottom: -150px;
+            z-index: -1;
         }
 
         .container {
-            width: 1040px;
-            max-width: 90%;
-            margin: 40px auto;
+            width: 1100px;
+            max-width: 92%;
+            margin: 0 auto;
         }
 
         /* =========================
-           HEADER
+           NAVBAR
+        ========================= */
+
+        nav {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .logo span {
+            color: #00ff88;
+        }
+
+        .nav-text {
+            color: #777;
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+
+        /* =========================
+           HERO
         ========================= */
 
         .hero {
-            height: 300px;
-            border-radius: 6px;
-            position: relative;
-            overflow: hidden;
+            margin-top: 20px;
+            min-height: 460px;
+            border: 1px solid #222;
+            border-radius: 24px;
             background:
                 linear-gradient(
-                    rgba(0, 0, 0, 0.55),
-                    rgba(0, 0, 0, 0.55)
-                ),
-                linear-gradient(135deg, #78909c, #263238);
+                    135deg,
+                    rgba(20, 20, 20, 0.96),
+                    rgba(10, 10, 10, 0.88)
+                );
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            padding: 55px;
         }
 
-        .hero-text {
+        .hero::before {
+            content: "";
             position: absolute;
-            left: 35px;
-            bottom: 25px;
-            color: white;
+            width: 350px;
+            height: 350px;
+            border-radius: 50%;
+            background: #00ff88;
+            opacity: 0.08;
+            filter: blur(70px);
+            right: -100px;
+            top: -100px;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
         }
 
         .profile-img {
-            width: 75px;
-            height: 75px;
+            width: 100px;
+            height: 100px;
             object-fit: cover;
             border-radius: 50%;
-            border: 3px solid white;
-            margin-bottom: 12px;
-            display: block;
+            border: 3px solid #00ff88;
+            padding: 3px;
+            background: #111;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.25);
+            margin-bottom: 25px;
         }
 
-        .small-title {
-            font-size: 12px;
-            letter-spacing: 4px;
-            margin-bottom: 10px;
+        .tag {
+            display: inline-block;
+            padding: 7px 12px;
+            border: 1px solid #333;
+            border-radius: 50px;
+            color: #00ff88;
+            font-size: 11px;
+            letter-spacing: 2px;
+            margin-bottom: 18px;
         }
 
         .hero h1 {
-            margin: 0 0 10px;
-            font-size: 52px;
-            line-height: 1;
+            margin: 0;
+            font-size: 64px;
+            line-height: 0.95;
+            letter-spacing: -2px;
         }
 
-        .hero p {
-            margin: 6px 0;
-            font-size: 16px;
+        .hero h1 span {
+            color: #00ff88;
+        }
+
+        .hero-name {
+            margin-top: 20px;
+            color: #ddd;
+            font-size: 18px;
+        }
+
+        .hero-description {
+            color: #777;
+            max-width: 600px;
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+
+        .hero-info {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .info {
+            padding: 9px 14px;
+            border-radius: 8px;
+            background: #151515;
+            border: 1px solid #252525;
+            color: #aaa;
+            font-size: 13px;
         }
 
         /* =========================
-           HOMEWORK
+           SECTION TITLE
+        ========================= */
+
+        .section-title {
+            margin-top: 80px;
+            margin-bottom: 25px;
+        }
+
+        .section-title small {
+            color: #00ff88;
+            letter-spacing: 3px;
+            font-size: 11px;
+        }
+
+        .section-title h2 {
+            font-size: 36px;
+            margin: 8px 0 0;
+        }
+
+        .section-title p {
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* =========================
+           HOMEWORK GRID
         ========================= */
 
         .homework {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 28px;
+            gap: 18px;
         }
 
         .card {
-            border: 1px solid #dddddd;
-            border-radius: 5px;
-            padding: 25px;
-            min-height: 330px;
+            position: relative;
+            overflow: hidden;
+            min-height: 320px;
+            padding: 28px;
+            border: 1px solid #242424;
+            border-radius: 18px;
+            background: rgba(17, 17, 17, 0.8);
+            transition: 0.3s;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: #00ff88;
+            opacity: 0;
+            filter: blur(60px);
+            right: -50px;
+            top: -50px;
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            border-color: #00ff88;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .card:hover::before {
+            opacity: 0.08;
+        }
+
+        .card-top {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
         }
 
         .label {
-            color: #7890a8;
-            font-size: 12px;
+            color: #00ff88;
+            font-size: 10px;
             letter-spacing: 3px;
         }
 
         .number {
-            font-size: 44px;
-            margin: 5px 0 15px;
+            color: #333;
+            font-size: 38px;
+            font-weight: bold;
         }
 
-        .card h2 {
+        .card h3 {
             font-size: 20px;
             line-height: 1.45;
-            margin: 0 0 10px;
+            margin: 25px 0 10px;
+            position: relative;
         }
 
         .card p {
-            color: #68717a;
-            line-height: 1.65;
-            margin: 0;
+            color: #777;
+            line-height: 1.6;
+            font-size: 14px;
+            position: relative;
         }
 
         .file {
-            margin-top: auto;
-            padding-top: 15px;
-            color: #536273;
-            font-size: 14px;
+            color: #555;
+            font-size: 12px;
+            margin-top: 25px;
+            position: relative;
         }
 
         /* =========================
-           BUTTON
+           BUTTONS
         ========================= */
 
         .buttons {
             margin-top: 18px;
+            position: relative;
         }
 
         .btn {
             display: inline-block;
-            padding: 10px 15px;
+            padding: 10px 14px;
             margin-right: 5px;
             margin-bottom: 5px;
-            border: 1px solid #cccccc;
-            border-radius: 3px;
-            color: #111111;
-            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #151515;
+            color: #ddd;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 12px;
+            transition: 0.25s;
         }
 
         .btn:hover {
-            background: #eeeeee;
+            background: #222;
+            border-color: #555;
+            color: white;
         }
 
-        .black {
-            background: #111111;
-            color: #ffffff;
-            border-color: #111111;
+        .btn-main {
+            background: #00ff88;
+            border-color: #00ff88;
+            color: #000;
+            font-weight: bold;
         }
 
-        .black:hover {
-            background: #333333;
+        .btn-main:hover {
+            background: #45ffad;
+            border-color: #45ffad;
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.25);
+        }
+
+        /* =========================
+           PROJECT BANNER
+        ========================= */
+
+        .project {
+            margin-top: 70px;
+            padding: 35px;
+            border-radius: 18px;
+            border: 1px solid #242424;
+            background: linear-gradient(135deg, #111, #0c0c0c);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        .project h2 {
+            margin: 0 0 10px;
+            font-size: 25px;
+        }
+
+        .project p {
+            color: #777;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .project-btn {
+            flex-shrink: 0;
         }
 
         /* =========================
@@ -165,10 +377,17 @@
         ========================= */
 
         footer {
-            text-align: center;
-            color: #888888;
-            font-size: 13px;
-            margin: 40px 0 20px;
+            border-top: 1px solid #1d1d1d;
+            margin-top: 80px;
+            padding: 25px 0 35px;
+            display: flex;
+            justify-content: space-between;
+            color: #555;
+            font-size: 12px;
+        }
+
+        footer span {
+            color: #00ff88;
         }
 
         /* =========================
@@ -177,20 +396,27 @@
 
         @media (max-width: 750px) {
 
-            .container {
-                max-width: 95%;
+            .hero {
+                padding: 30px;
+                min-height: 500px;
+            }
+
+            .hero h1 {
+                font-size: 45px;
             }
 
             .homework {
                 grid-template-columns: 1fr;
             }
 
-            .hero {
-                height: 330px;
+            .project {
+                flex-direction: column;
+                align-items: flex-start;
             }
 
-            .hero h1 {
-                font-size: 42px;
+            footer {
+                flex-direction: column;
+                gap: 10px;
             }
         }
     </style>
@@ -200,58 +426,108 @@
 
 <div class="container">
 
-    <!-- HEADER -->
-    <div class="hero">
+    <!-- NAVBAR -->
+    <nav>
+        <div class="logo">
+            FOOD<span>STREAMLIT</span>
+        </div>
 
-        <div class="hero-text">
+        <div class="nav-text">
+            PORTFOLIO / 2026
+        </div>
+    </nav>
 
-            <!-- PROFILE -->
+
+    <!-- HERO -->
+    <section class="hero">
+
+        <div class="hero-content">
+
             <img src="images/profile.jpg"
-                 alt="Profile"
+                 alt="Wachirawit Profile"
                  class="profile-img">
 
-            <div class="small-title">
-                FOODSTREAMLIT
+            <div>
+                <span class="tag">FOOD RECOMMENDER SYSTEM</span>
             </div>
 
-            <h1>Homework</h1>
+            <h1>
+                FOOD<br>
+                <span>STREAMLIT</span>
+            </h1>
 
-            <p>
-                <b>วชิรวิทย์ พรสวาท 664245032</b>
-            </p>
+            <div class="hero-name">
+                วชิรวิทย์ พรสวาท
+                <span style="color:#555;">•</span>
+                664245032
+            </div>
 
-            <p>
-                รวมงานการบ้านและผลงานด้านระบบอาหาร
-            </p>
+            <div class="hero-description">
+                รวมงานการบ้าน โปรเจกต์ และผลงานที่เกี่ยวข้องกับ
+                Food Recommender System, Neo4j และ Streamlit
+                ที่พัฒนาขึ้นระหว่างการเรียน
+            </div>
+
+            <div class="hero-info">
+                <div class="info">Computer Science</div>
+                <div class="info">Neo4j</div>
+                <div class="info">Streamlit</div>
+                <div class="info">Food Recommendation</div>
+            </div>
 
         </div>
+
+    </section>
+
+
+    <!-- HOMEWORK TITLE -->
+    <div class="section-title">
+
+        <small>MY WORKS</small>
+
+        <h2>Homework & Projects</h2>
+
+        <p>
+            รวมผลงานการบ้านทั้งหมดของ FoodStreamlit
+        </p>
 
     </div>
 
 
+    <!-- HOMEWORK -->
     <section class="homework">
 
         <!-- HW1 -->
         <div class="card">
-            <div class="label">HOMEWORK</div>
-            <div class="number">01</div>
 
-            <h2>hw1_Week2_transaction_lab</h2>
-            <p>Transaction Lab</p>
-            <div class="file">Jupyter Notebook (.ipynb)</div>
+            <div class="card-top">
+                <div class="label">HOMEWORK 01</div>
+                <div class="number">01</div>
+            </div>
+
+            <h3>hw1_Week2_transaction_lab</h3>
+
+            <p>
+                แบบฝึกหัด Transaction Lab
+                สำหรับการจัดการข้อมูลและการทำงานกับ Transaction
+            </p>
+
+            <div class="file">
+                JUPYTER NOTEBOOK • .IPYNB
+            </div>
 
             <div class="buttons">
 
                 <a href="https://colab.research.google.com/drive/1MyfusQy_sCBUmi4vgNQ6Ok8Kkj6v39kc"
                    target="_blank"
-                   class="btn black">
+                   class="btn btn-main">
                     เข้า Colab
                 </a>
 
                 <a href="homework/hw1_Week2_transaction_lab.ipynb"
                    download
                    class="btn">
-                    ดาวน์โหลดไฟล์
+                    ดาวน์โหลด
                 </a>
 
                 <a href="https://github.com/Wachixd102/FoodStreamlit/blob/main/homework/hw1_Week2_transaction_lab.ipynb"
@@ -261,23 +537,34 @@
                 </a>
 
             </div>
+
         </div>
 
 
         <!-- HW2 -->
         <div class="card">
-            <div class="label">HOMEWORK</div>
-            <div class="number">02</div>
 
-            <h2>hw2_Neo4J</h2>
-            <p>Neo4J Homework</p>
-            <div class="file">PDF</div>
+            <div class="card-top">
+                <div class="label">HOMEWORK 02</div>
+                <div class="number">02</div>
+            </div>
+
+            <h3>hw2_Neo4J</h3>
+
+            <p>
+                งานเกี่ยวกับ Neo4j และการสร้าง Graph Database
+                พร้อมการออกแบบ Node และ Relationship
+            </p>
+
+            <div class="file">
+                DOCUMENT • PDF
+            </div>
 
             <div class="buttons">
 
                 <a href="homework/hw2_Neo4J.pdf"
                    target="_blank"
-                   class="btn black">
+                   class="btn btn-main">
                     เปิดไฟล์ PDF
                 </a>
 
@@ -288,30 +575,41 @@
                 </a>
 
             </div>
+
         </div>
 
 
         <!-- HW3 -->
         <div class="card">
-            <div class="label">HOMEWORK</div>
-            <div class="number">03</div>
 
-            <h2>hw3_FoodsRecommedersystem</h2>
-            <p>Food Recommender System</p>
-            <div class="file">Jupyter Notebook (.ipynb)</div>
+            <div class="card-top">
+                <div class="label">HOMEWORK 03</div>
+                <div class="number">03</div>
+            </div>
+
+            <h3>hw3_FoodsRecommedersystem</h3>
+
+            <p>
+                ระบบแนะนำอาหาร
+                โดยใช้ข้อมูลและความสัมพันธ์เพื่อสร้าง Recommendation System
+            </p>
+
+            <div class="file">
+                JUPYTER NOTEBOOK • .IPYNB
+            </div>
 
             <div class="buttons">
 
                 <a href="https://colab.research.google.com/drive/10n96zTqWK0HLjno_bRb3BbHrDJNr3XB1"
                    target="_blank"
-                   class="btn black">
+                   class="btn btn-main">
                     เข้า Colab
                 </a>
 
                 <a href="homework/hw3_FoodsRecommedersystem.ipynb"
                    download
                    class="btn">
-                    ดาวน์โหลดไฟล์
+                    ดาวน์โหลด
                 </a>
 
                 <a href="https://github.com/Wachixd102/FoodStreamlit/blob/main/homework/hw3_FoodsRecommedersystem.ipynb"
@@ -321,30 +619,41 @@
                 </a>
 
             </div>
+
         </div>
 
 
         <!-- HW4 -->
         <div class="card">
-            <div class="label">HOMEWORK</div>
-            <div class="number">04</div>
 
-            <h2>hw4_FoodRecommender_Neo4j_Aura_(Colab)</h2>
-            <p>Food Recommender with Neo4j Aura</p>
-            <div class="file">Jupyter Notebook (.ipynb)</div>
+            <div class="card-top">
+                <div class="label">HOMEWORK 04</div>
+                <div class="number">04</div>
+            </div>
+
+            <h3>hw4_FoodRecommender_Neo4j_Aura_(Colab)</h3>
+
+            <p>
+                Food Recommender System
+                ที่เชื่อมต่อกับ Neo4j Aura และทำงานผ่าน Google Colab
+            </p>
+
+            <div class="file">
+                JUPYTER NOTEBOOK • .IPYNB
+            </div>
 
             <div class="buttons">
 
                 <a href="https://colab.research.google.com/drive/1bPwGQPgDAS_5RJLqhTEQ3IjHFR5wsoSX"
                    target="_blank"
-                   class="btn black">
+                   class="btn btn-main">
                     เข้า Colab
                 </a>
 
                 <a href="homework/hw4_FoodRecommender_Neo4j_Aura_(Colab).ipynb"
                    download
                    class="btn">
-                    ดาวน์โหลดไฟล์
+                    ดาวน์โหลด
                 </a>
 
                 <a href="https://github.com/Wachixd102/FoodStreamlit/blob/main/homework/hw4_FoodRecommender_Neo4j_Aura_(Colab).ipynb"
@@ -354,29 +663,40 @@
                 </a>
 
             </div>
+
         </div>
 
 
         <!-- HW5 -->
         <div class="card">
-            <div class="label">HOMEWORK</div>
-            <div class="number">05</div>
 
-            <h2>hw5_Food_Recommended_Presentation</h2>
-            <p>Food Recommended Presentation</p>
-            <div class="file">PDF</div>
+            <div class="card-top">
+                <div class="label">HOMEWORK 05</div>
+                <div class="number">05</div>
+            </div>
+
+            <h3>hw5_Food_Recommended_Presentation</h3>
+
+            <p>
+                Presentation สำหรับนำเสนอ Food Recommended System
+                และรายละเอียดของโปรเจกต์
+            </p>
+
+            <div class="file">
+                PRESENTATION • PDF
+            </div>
 
             <div class="buttons">
 
                 <a href="homework/hw5_Food_Recommended_Presentation.pdf"
                    target="_blank"
-                   class="btn black">
+                   class="btn btn-main">
                     เปิดไฟล์ PDF
                 </a>
 
                 <a href="https://foodapp-u2rvtgjxshdtu3fxi534hn.streamlit.app/"
                    target="_blank"
-                   class="btn black">
+                   class="btn btn-main">
                     เปิดเว็บ
                 </a>
 
@@ -387,13 +707,48 @@
                 </a>
 
             </div>
+
         </div>
 
     </section>
 
 
+    <!-- PROJECT -->
+    <section class="project">
+
+        <div>
+            <h2>🍜 Food Recommender System</h2>
+
+            <p>
+                ลองใช้งานระบบแนะนำอาหารที่พัฒนาด้วย Streamlit
+                และระบบ Recommendation
+            </p>
+        </div>
+
+        <div class="project-btn">
+
+            <a href="https://foodapp-u2rvtgjxshdtu3fxi534hn.streamlit.app/"
+               target="_blank"
+               class="btn btn-main">
+                เปิด Food App →
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <!-- FOOTER -->
     <footer>
-        © 2026 Wachirawit Phonsawat • FoodStreamlit
+
+        <div>
+            © 2026 <span>Wachirawit Phonsawat</span>
+        </div>
+
+        <div>
+            FoodStreamlit • Computer Science
+        </div>
+
     </footer>
 
 </div>
