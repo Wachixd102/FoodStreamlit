@@ -1,9 +1,11 @@
+```html
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Homework Hub</title>
+
+    <title>FoodStreamlit | Homework</title>
 
     <style>
         * {
@@ -12,9 +14,9 @@
 
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
+            font-family: Arial, "Noto Sans Thai", sans-serif;
             background: #ffffff;
-            color: #111;
+            color: #111111;
         }
 
         .container {
@@ -23,52 +25,51 @@
             margin: 40px auto;
         }
 
-        /* ส่วนบน */
+        /* =========================
+           HEADER
+        ========================= */
+
         .hero {
             height: 300px;
-            border-radius: 5px;
-            overflow: hidden;
+            border-radius: 6px;
             position: relative;
-            background: #333;
-        }
-
-        .hero img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .hero::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.45);
+            overflow: hidden;
+            background:
+                linear-gradient(
+                    rgba(0, 0, 0, 0.55),
+                    rgba(0, 0, 0, 0.55)
+                ),
+                linear-gradient(135deg, #78909c, #263238);
         }
 
         .hero-text {
             position: absolute;
-            z-index: 2;
-            left: 32px;
+            left: 35px;
             bottom: 35px;
             color: white;
         }
 
         .small-title {
-            letter-spacing: 3px;
             font-size: 12px;
-            margin-bottom: 8px;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
         }
 
         .hero h1 {
-            font-size: 50px;
             margin: 0 0 10px;
+            font-size: 52px;
+            line-height: 1;
         }
 
         .hero p {
             margin: 6px 0;
+            font-size: 16px;
         }
 
-        /* กล่องงาน */
+        /* =========================
+           HOMEWORK
+        ========================= */
+
         .homework {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -77,16 +78,18 @@
         }
 
         .card {
-            border: 1px solid #ddd;
-            padding: 25px;
+            border: 1px solid #dddddd;
             border-radius: 5px;
-            min-height: 320px;
+            padding: 25px;
+            min-height: 330px;
+            display: flex;
+            flex-direction: column;
         }
 
         .label {
             color: #7890a8;
-            letter-spacing: 3px;
             font-size: 12px;
+            letter-spacing: 3px;
         }
 
         .number {
@@ -96,53 +99,89 @@
 
         .card h2 {
             font-size: 20px;
-            line-height: 1.4;
-            margin-bottom: 10px;
+            line-height: 1.45;
+            margin: 0 0 10px;
         }
 
         .card p {
             color: #68717a;
-            line-height: 1.6;
+            line-height: 1.65;
+            margin: 0;
         }
 
+        .file {
+            margin-top: auto;
+            padding-top: 15px;
+            color: #536273;
+            font-size: 14px;
+        }
+
+        /* =========================
+           BUTTON
+        ========================= */
+
         .buttons {
-            margin-top: 20px;
+            margin-top: 18px;
         }
 
         .btn {
             display: inline-block;
             padding: 10px 15px;
             margin-right: 5px;
-            border: 1px solid #ccc;
-            color: #111;
+            margin-bottom: 5px;
+            border: 1px solid #cccccc;
+            border-radius: 3px;
+            color: #111111;
+            background: #ffffff;
             text-decoration: none;
             font-size: 14px;
-            border-radius: 2px;
         }
 
         .btn:hover {
-            background: #eee;
+            background: #eeeeee;
         }
 
         .black {
-            background: #111;
-            color: white;
-            border-color: #111;
+            background: #111111;
+            color: #ffffff;
+            border-color: #111111;
         }
+
+        .black:hover {
+            background: #333333;
+        }
+
+        /* =========================
+           FOOTER
+        ========================= */
 
         footer {
             text-align: center;
-            color: #888;
+            color: #888888;
+            font-size: 13px;
             margin: 40px 0 20px;
         }
 
+        /* =========================
+           MOBILE
+        ========================= */
+
         @media (max-width: 750px) {
+
+            .container {
+                max-width: 95%;
+            }
+
             .homework {
                 grid-template-columns: 1fr;
             }
 
-            .container {
-                max-width: 95%;
+            .hero {
+                height: 330px;
+            }
+
+            .hero h1 {
+                font-size: 42px;
             }
         }
     </style>
@@ -152,145 +191,253 @@
 
 <div class="container">
 
-    <!-- ส่วนหัว -->
+    <!-- HEADER -->
     <div class="hero">
 
-        <!-- ตอนนี้ยังไม่มีรูป -->
         <div class="hero-text">
-            <div class="small-title">HOMEWORK HUB</div>
+
+            <div class="small-title">
+                FOODSTREAMLIT
+            </div>
 
             <h1>Homework</h1>
 
-            <p><b>วชิรวิทย์ พรสวาท</b> • รหัสนักศึกษา 664245031</p>
+            <p>
+                <b>วชิรวิทย์ พรสวาท</b>
+            </p>
 
-            <p>รวมการบ้านทั้งหมด 5 งาน เปิดดู ดาวน์โหลดไฟล์ และเข้า GitHub</p>
+            <p>
+                รวมงานการบ้านและผลงานด้านระบบอาหาร
+            </p>
+
         </div>
 
     </div>
 
 
-    <!-- รายการงาน -->
+    <!-- HOMEWORK -->
     <div class="homework">
 
-        <!-- งานที่ 1 -->
-        <div class="card">
-            <div class="label">HOMEWORK</div>
 
-            <div class="number">01</div>
+        <!-- =========================
+             HOMEWORK 01
+        ========================== -->
+
+        <div class="card">
+
+            <div class="label">
+                HOMEWORK
+            </div>
+
+            <div class="number">
+                01
+            </div>
 
             <h2>
-                Transaction, Concurrency & Recovery
-                (MySQL / InnoDB)
+                งานการบ้านที่ 1
             </h2>
 
             <p>
-                งานปฏิบัติการเกี่ยวกับ MySQL / InnoDB
-                และการจัดการ Transaction, Commit/Rollback,
-                Race Condition, Deadlock และ Isolation Level
+                รายละเอียดงานการบ้านที่ 1
+                สามารถแก้ไขข้อความส่วนนี้ให้ตรงกับงานจริงได้
             </p>
 
-            <div class="buttons">
-                <a href="#" class="btn black">เปิดงาน</a>
-                <a href="#" class="btn">GitHub</a>
+            <div class="file">
+                ไฟล์งาน / Notebook / PDF
             </div>
+
+            <div class="buttons">
+
+                <a href="#" class="btn black">
+                    เปิดงาน
+                </a>
+
+                <a href="#" class="btn">
+                    GitHub
+                </a>
+
+            </div>
+
         </div>
 
 
-        <!-- งานที่ 2 -->
-        <div class="card">
-            <div class="label">HOMEWORK</div>
+        <!-- =========================
+             HOMEWORK 02
+        ========================== -->
 
-            <div class="number">02</div>
+        <div class="card">
+
+            <div class="label">
+                HOMEWORK
+            </div>
+
+            <div class="number">
+                02
+            </div>
 
             <h2>
-                Club Recommendation Graph ด้วย Neo4j
+                งานการบ้านที่ 2
             </h2>
 
             <p>
-                ระบบแนะนำชมรมโดยใช้ Graph Database
-                ด้วย Neo4j และความสัมพันธ์ของ Student,
-                Club และ Interest
+                รายละเอียดงานการบ้านที่ 2
+                สามารถแก้ไขข้อความส่วนนี้ให้ตรงกับงานจริงได้
             </p>
 
-            <div class="buttons">
-                <a href="#" class="btn black">เปิด PDF</a>
-                <a href="#" class="btn">GitHub</a>
+            <div class="file">
+                ไฟล์งาน / Notebook / PDF
             </div>
+
+            <div class="buttons">
+
+                <a href="#" class="btn black">
+                    เปิดงาน
+                </a>
+
+                <a href="#" class="btn">
+                    GitHub
+                </a>
+
+            </div>
+
         </div>
 
 
-        <!-- งานที่ 3 -->
-        <div class="card">
-            <div class="label">HOMEWORK</div>
+        <!-- =========================
+             HOMEWORK 03
+        ========================== -->
 
-            <div class="number">03</div>
+        <div class="card">
+
+            <div class="label">
+                HOMEWORK
+            </div>
+
+            <div class="number">
+                03
+            </div>
 
             <h2>
-                Car Recommender System ด้วย Graph
+                งานการบ้านที่ 3
             </h2>
 
             <p>
-                สร้างระบบแนะนำรถโดยใช้ Graph
-                และ NetworkX จากข้อมูลผู้ใช้และรถยนต์
+                รายละเอียดงานการบ้านที่ 3
+                สามารถแก้ไขข้อความส่วนนี้ให้ตรงกับงานจริงได้
             </p>
 
-            <div class="buttons">
-                <a href="#" class="btn black">เปิด Colab</a>
-                <a href="#" class="btn">GitHub</a>
+            <div class="file">
+                ไฟล์งาน / Notebook / PDF
             </div>
+
+            <div class="buttons">
+
+                <a href="#" class="btn black">
+                    เปิดงาน
+                </a>
+
+                <a href="#" class="btn">
+                    GitHub
+                </a>
+
+            </div>
+
         </div>
 
 
-        <!-- งานที่ 4 -->
-        <div class="card">
-            <div class="label">HOMEWORK</div>
+        <!-- =========================
+             HOMEWORK 04
+        ========================== -->
 
-            <div class="number">04</div>
+        <div class="card">
+
+            <div class="label">
+                HOMEWORK
+            </div>
+
+            <div class="number">
+                04
+            </div>
 
             <h2>
-                Car Recommender ด้วย Neo4j Aura
+                งานการบ้านที่ 4
             </h2>
 
             <p>
-                สร้างกราฟ User และ Car ด้วย Neo4j Aura
-                และใช้ Python Driver พร้อม Cypher
+                รายละเอียดงานการบ้านที่ 4
+                สามารถแก้ไขข้อความส่วนนี้ให้ตรงกับงานจริงได้
             </p>
 
-            <div class="buttons">
-                <a href="#" class="btn black">เปิด Colab</a>
-                <a href="#" class="btn">GitHub</a>
+            <div class="file">
+                ไฟล์งาน / Notebook / PDF
             </div>
+
+            <div class="buttons">
+
+                <a href="#" class="btn black">
+                    เปิดงาน
+                </a>
+
+                <a href="#" class="btn">
+                    GitHub
+                </a>
+
+            </div>
+
         </div>
 
 
-        <!-- งานที่ 5 -->
-        <div class="card">
-            <div class="label">HOMEWORK</div>
+        <!-- =========================
+             HOMEWORK 05
+        ========================== -->
 
-            <div class="number">05</div>
+        <div class="card">
+
+            <div class="label">
+                HOMEWORK
+            </div>
+
+            <div class="number">
+                05
+            </div>
 
             <h2>
-                งานที่ 5
+                งานการบ้านที่ 5
             </h2>
 
             <p>
-                ใส่รายละเอียดของงานที่ 5 ของมึงตรงนี้
+                รายละเอียดงานการบ้านที่ 5
+                สามารถแก้ไขข้อความส่วนนี้ให้ตรงกับงานจริงได้
             </p>
 
-            <div class="buttons">
-                <a href="#" class="btn black">เปิดงาน</a>
-                <a href="#" class="btn">GitHub</a>
+            <div class="file">
+                ไฟล์งาน / Notebook / PDF
             </div>
+
+            <div class="buttons">
+
+                <a href="#" class="btn black">
+                    เปิดงาน
+                </a>
+
+                <a href="#" class="btn">
+                    GitHub
+                </a>
+
+            </div>
+
         </div>
+
 
     </div>
 
 
     <footer>
-        © 2026 Wachirawit Phonsawat • Homework Hub
+        © 2026 Wachirawit Phonsawat • FoodStreamlit
     </footer>
 
 </div>
 
 </body>
 </html>
+```
