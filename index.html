@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework Hub</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #ffffff;
+            color: #111;
+        }
+
+        .container {
+            width: 1040px;
+            max-width: 90%;
+            margin: 40px auto;
+        }
+
+        /* ส่วนบน */
+        .hero {
+            height: 300px;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+            background: #333;
+        }
+
+        .hero img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        .hero-text {
+            position: absolute;
+            z-index: 2;
+            left: 32px;
+            bottom: 35px;
+            color: white;
+        }
+
+        .small-title {
+            letter-spacing: 3px;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .hero h1 {
+            font-size: 50px;
+            margin: 0 0 10px;
+        }
+
+        .hero p {
+            margin: 6px 0;
+        }
+
+        /* กล่องงาน */
+        .homework {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 28px;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            padding: 25px;
+            border-radius: 5px;
+            min-height: 320px;
+        }
+
+        .label {
+            color: #7890a8;
+            letter-spacing: 3px;
+            font-size: 12px;
+        }
+
+        .number {
+            font-size: 44px;
+            margin: 5px 0 15px;
+        }
+
+        .card h2 {
+            font-size: 20px;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: #68717a;
+            line-height: 1.6;
+        }
+
+        .buttons {
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+            color: #111;
+            text-decoration: none;
+            font-size: 14px;
+            border-radius: 2px;
+        }
+
+        .btn:hover {
+            background: #eee;
+        }
+
+        .black {
+            background: #111;
+            color: white;
+            border-color: #111;
+        }
+
+        footer {
+            text-align: center;
+            color: #888;
+            margin: 40px 0 20px;
+        }
+
+        @media (max-width: 750px) {
+            .homework {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- ส่วนหัว -->
+    <div class="hero">
+
+        <!-- ตอนนี้ยังไม่มีรูป -->
+        <div class="hero-text">
+            <div class="small-title">HOMEWORK HUB</div>
+
+            <h1>Homework</h1>
+
+            <p><b>วชิรวิทย์ พรสวาท</b> • รหัสนักศึกษา 664245031</p>
+
+            <p>รวมการบ้านทั้งหมด 5 งาน เปิดดู ดาวน์โหลดไฟล์ และเข้า GitHub</p>
+        </div>
+
+    </div>
+
+
+    <!-- รายการงาน -->
+    <div class="homework">
+
+        <!-- งานที่ 1 -->
+        <div class="card">
+            <div class="label">HOMEWORK</div>
+
+            <div class="number">01</div>
+
+            <h2>
+                Transaction, Concurrency & Recovery
+                (MySQL / InnoDB)
+            </h2>
+
+            <p>
+                งานปฏิบัติการเกี่ยวกับ MySQL / InnoDB
+                และการจัดการ Transaction, Commit/Rollback,
+                Race Condition, Deadlock และ Isolation Level
+            </p>
+
+            <div class="buttons">
+                <a href="#" class="btn black">เปิดงาน</a>
+                <a href="#" class="btn">GitHub</a>
+            </div>
+        </div>
+
+
+        <!-- งานที่ 2 -->
+        <div class="card">
+            <div class="label">HOMEWORK</div>
+
+            <div class="number">02</div>
+
+            <h2>
+                Club Recommendation Graph ด้วย Neo4j
+            </h2>
+
+            <p>
+                ระบบแนะนำชมรมโดยใช้ Graph Database
+                ด้วย Neo4j และความสัมพันธ์ของ Student,
+                Club และ Interest
+            </p>
+
+            <div class="buttons">
+                <a href="#" class="btn black">เปิด PDF</a>
+                <a href="#" class="btn">GitHub</a>
+            </div>
+        </div>
+
+
+        <!-- งานที่ 3 -->
+        <div class="card">
+            <div class="label">HOMEWORK</div>
+
+            <div class="number">03</div>
+
+            <h2>
+                Car Recommender System ด้วย Graph
+            </h2>
+
+            <p>
+                สร้างระบบแนะนำรถโดยใช้ Graph
+                และ NetworkX จากข้อมูลผู้ใช้และรถยนต์
+            </p>
+
+            <div class="buttons">
+                <a href="#" class="btn black">เปิด Colab</a>
+                <a href="#" class="btn">GitHub</a>
+            </div>
+        </div>
+
+
+        <!-- งานที่ 4 -->
+        <div class="card">
+            <div class="label">HOMEWORK</div>
+
+            <div class="number">04</div>
+
+            <h2>
+                Car Recommender ด้วย Neo4j Aura
+            </h2>
+
+            <p>
+                สร้างกราฟ User และ Car ด้วย Neo4j Aura
+                และใช้ Python Driver พร้อม Cypher
+            </p>
+
+            <div class="buttons">
+                <a href="#" class="btn black">เปิด Colab</a>
+                <a href="#" class="btn">GitHub</a>
+            </div>
+        </div>
+
+
+        <!-- งานที่ 5 -->
+        <div class="card">
+            <div class="label">HOMEWORK</div>
+
+            <div class="number">05</div>
+
+            <h2>
+                งานที่ 5
+            </h2>
+
+            <p>
+                ใส่รายละเอียดของงานที่ 5 ของมึงตรงนี้
+            </p>
+
+            <div class="buttons">
+                <a href="#" class="btn black">เปิดงาน</a>
+                <a href="#" class="btn">GitHub</a>
+            </div>
+        </div>
+
+    </div>
+
+
+    <footer>
+        © 2026 Wachirawit Phonsawat • Homework Hub
+    </footer>
+
+</div>
+
+</body>
+</html>
